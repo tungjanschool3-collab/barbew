@@ -381,4 +381,11 @@ body {
   .tool-btn { min-width: 44px; padding: 6px 8px; font-size: 16px; }
   .tool-btn span { display: none; }
   .problem-text { font-size: 18px; }
+  .scratch-header { font-size: 13px; gap: 6px; padding: 6px 8px; }
+  .scratch-header > span:first-child { white-space: nowrap; }
+  .scratch-tools { gap: 2px; }
+  .scratch-tool { padding: 4px 6px; font-size: 13px; }
+  .scratch-swatch { width: 16px; height: 16px; }
+  .scratchpad { bottom: 10px; left: 10px; width: calc(100vw - 20px); }
+  .calculator { right: 10px; bottom: 10px; width: 210px; }
 }
