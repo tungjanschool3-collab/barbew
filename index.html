@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>BarBew — วาด Bar Model สนุกๆ</title>
+  <meta name="description" content="โปรแกรมวาด Bar Model สำหรับนักเรียนประถม โดยครูโสภิตรา จิตชู" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="logo-wrap" id="logo3d"></div>
+    <div class="title-block">
+      <h1>Bar<span class="accent">Bew</span> 🌈</h1>
+      <p class="subtitle">โปรแกรมวาดแบบจำลองบาร์ (Bar Model) เพื่อการเรียนคณิตศาสตร์</p>
+    </div>
+    <div class="credit">พัฒนาโดย<br/><strong>ครูโสภิตรา จิตชู</strong></div>
+  </header>
+
+  <section class="problem-panel">
+    <div class="problem-panel-row">
+      <button id="btnPrevProblem" class="pill-btn" title="ข้อก่อนหน้า">◀</button>
+      <span id="problemIndex" class="problem-index">ข้อที่ 1/1</span>
+      <button id="btnNextProblem" class="pill-btn" title="ข้อถัดไป">▶</button>
+      <label class="upload-btn pill-btn">
+        📁 อัปโหลดโจทย์
+        <input type="file" id="fileUpload" accept=".txt" hidden multiple />
+      </label>
+      <label class="fontsize-label">
+        ขนาดตัวอักษร
+        <input type="range" id="fontSizeRange" min="14" max="48" value="22" />
+      </label>
+    </div>
+    <textarea id="problemText" class="problem-text" placeholder="พิมพ์โจทย์ปัญหาที่นี่... หรืออัปโหลดไฟล์ .txt (แยกแต่ละข้อด้วยบรรทัดว่าง)"></textarea>
+  </section>
+
+  <section class="toolbar" id="toolbar">
+    <button class="tool-btn" data-tool="select" title="เลือก/ย้าย">🖐️<span>เลือก</span></button>
+    <button class="tool-btn" data-tool="bar" title="สร้างบาร์">🟩<span>สร้างบาร์</span></button>
+    <button class="tool-btn" data-tool="line" title="เส้นตรง">📏<span>เส้นตรง</span></button>
+    <button class="tool-btn" data-tool="dashed" title="เส้นประ">➖<span>เส้นประ</span></button>
+    <button class="tool-btn" data-tool="bracket" title="วงเล็บ">「」<span>วงเล็บ</span></button>
+    <button class="tool-btn" data-tool="brace" title="ปีกกา">{ }<span>ปีกกา</span></button>
+    <button class="tool-btn" data-tool="text" title="พิมพ์ข้อความ / ตัวเลข">🔤<span>ข้อความ</span></button>
+    <button class="tool-btn" data-tool="scissors" title="กรรไกรตัดบาร์">✂️<span>ตัดบาร์</span></button>
+    <button class="tool-btn" id="btnCopy" title="คัดลอก">📋<span>คัดลอก</span></button>
+    <button class="tool-btn" id="btnPaste" title="วาง">📄<span>วาง</span></button>
+    <button class="tool-btn" id="btnDelete" title="ลบ">🗑️<span>ลบ</span></button>
+    <button class="tool-btn" id="btnUndo" title="ย้อนกลับ">↩️<span>ย้อนกลับ</span></button>
+    <button class="tool-btn" id="btnClear" title="ล้างทั้งหมด">🧹<span>ล้างทั้งหมด</span></button>
+    <span class="tool-sep"></span>
+    <input type="color" id="colorPicker" value="#ff6b6b" title="เลือกสี" />
+    <button class="tool-btn" id="btnZoomOut" title="ย่อ">🔍−</button>
+    <span id="zoomLabel" class="zoom-label">100%</span>
+    <button class="tool-btn" id="btnZoomIn" title="ขยาย">🔍+</button>
+    <button class="tool-btn calc-btn" id="btnCalc" title="เครื่องคิดเลข">🧮<span>คิดเลข</span></button>
+  </section>
+
+  <main class="canvas-wrap">
+    <canvas id="canvas"></canvas>
+  </main>
+
+  <div id="calculator" class="calculator hidden">
+    <div class="calc-header">
+      <span>🧮 เครื่องคิดเลข</span>
+      <button id="calcClose">✕</button>
+    </div>
+    <input id="calcDisplay" class="calc-display" readonly value="0" />
+    <div class="calc-grid" id="calcGrid"></div>
+  </div>
+
+  <footer class="app-footer">
+    © BarBew — สร้างขึ้นเพื่อการศึกษา | พัฒนาโดย ครูโสภิตรา จิตชู
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

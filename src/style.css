@@ -1,0 +1,304 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap');
+
+:root {
+  --pink: #ff6b9d;
+  --orange: #ffa94d;
+  --yellow: #ffd93d;
+  --green: #6bcB77;
+  --blue: #4d96ff;
+  --purple: #a06cd5;
+  --bg: #fef9f4;
+  --panel: #ffffff;
+  --ink: #3a2e50;
+  --radius: 16px;
+  font-family: "Kanit", "Sarabun", "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #fff6e9 0%, #fef1f8 100%);
+  color: var(--ink);
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  background: linear-gradient(90deg, var(--pink), var(--purple));
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  position: relative;
+  z-index: 5;
+}
+
+.logo-wrap {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  overflow: hidden;
+}
+
+.title-block { flex: 1; min-width: 0; }
+.title-block h1 {
+  margin: 0;
+  font-size: clamp(20px, 4vw, 30px);
+  font-weight: 700;
+}
+.title-block .accent { color: var(--yellow); }
+.title-block .subtitle {
+  margin: 2px 0 0;
+  font-size: clamp(11px, 2vw, 14px);
+  opacity: 0.9;
+}
+
+.credit {
+  font-size: 12px;
+  text-align: right;
+  line-height: 1.4;
+  opacity: 0.95;
+  flex: none;
+}
+
+/* Problem panel */
+.problem-panel {
+  background: var(--panel);
+  border-bottom: 3px dashed var(--orange);
+  padding: 10px 16px;
+}
+
+.problem-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.pill-btn {
+  border: none;
+  background: var(--blue);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform .1s ease;
+}
+.pill-btn:hover { transform: scale(1.05); }
+.upload-btn { background: var(--green); display: inline-flex; align-items: center; }
+
+.problem-index {
+  font-weight: 700;
+  color: var(--purple);
+  min-width: 90px;
+  text-align: center;
+}
+
+.fontsize-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.problem-text {
+  width: 100%;
+  min-height: 70px;
+  resize: vertical;
+  border: 2px solid var(--yellow);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 22px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fffdf6;
+}
+.problem-text:focus { outline: 3px solid var(--pink); }
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: linear-gradient(90deg, #fff3d6, #ffe1ef);
+  border-bottom: 2px solid #ffd6e8;
+  position: sticky;
+  top: 0;
+  z-index: 4;
+}
+
+.tool-btn {
+  border: none;
+  background: white;
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 52px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: transform .1s ease, background .15s ease;
+}
+.tool-btn span { font-size: 10px; font-weight: 600; color: var(--ink); }
+.tool-btn:hover { transform: translateY(-2px); }
+.tool-btn.active {
+  background: var(--yellow);
+  box-shadow: 0 0 0 3px var(--pink) inset;
+}
+
+.tool-sep {
+  width: 2px;
+  height: 30px;
+  background: #ffd6e8;
+  margin: 0 4px;
+}
+
+#colorPicker {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.zoom-label {
+  font-weight: 700;
+  color: var(--purple);
+  min-width: 46px;
+  text-align: center;
+}
+
+.calc-btn { background: var(--purple); }
+.calc-btn span { color: white; }
+
+/* Canvas */
+.canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg, #ffffff 0 39px, #f1f1fb 39px 40px),
+    repeating-linear-gradient(90deg, #ffffff 0 39px, #f1f1fb 39px 40px);
+  touch-action: none;
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Calculator */
+.calculator {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 240px;
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  overflow: hidden;
+  z-index: 20;
+  border: 3px solid var(--purple);
+}
+.calculator.hidden { display: none; }
+
+.calc-header {
+  background: var(--purple);
+  color: white;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+}
+.calc-header button {
+  border: none;
+  background: transparent;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.calc-display {
+  width: 100%;
+  border: none;
+  padding: 12px;
+  font-size: 24px;
+  text-align: right;
+  background: #fff8ec;
+  font-weight: 700;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 6px;
+}
+.calc-grid button {
+  border: none;
+  padding: 14px 0;
+  font-size: 16px;
+  border-radius: 10px;
+  background: #f1eefc;
+  cursor: pointer;
+  font-weight: 600;
+}
+.calc-grid button.op { background: var(--orange); color: white; }
+.calc-grid button.eq { background: var(--green); color: white; }
+.calc-grid button.clear { background: var(--pink); color: white; }
+
+/* Footer */
+.app-footer {
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  color: var(--purple);
+  background: #fff6e9;
+}
+
+/* Text edit overlay */
+.text-edit-box {
+  position: absolute;
+  min-width: 24px;
+  padding: 2px 6px;
+  border: 2px dashed var(--blue);
+  background: rgba(255,255,255,0.9);
+  border-radius: 6px;
+  font-family: inherit;
+  outline: none;
+  z-index: 10;
+}
+
+@media (max-width: 640px) {
+  .app-header { padding: 8px 10px; gap: 10px; }
+  .logo-wrap { width: 44px; height: 44px; }
+  .credit { display: none; }
+  .tool-btn { min-width: 44px; padding: 6px 8px; font-size: 16px; }
+  .tool-btn span { display: none; }
+  .problem-text { font-size: 18px; }
+}
