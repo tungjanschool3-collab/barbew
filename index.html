@@ -55,6 +55,7 @@
     <span id="zoomLabel" class="zoom-label">100%</span>
     <button class="tool-btn" id="btnZoomIn" title="ขยาย">🔍+</button>
     <button class="tool-btn calc-btn" id="btnCalc" title="เครื่องคิดเลข">🧮<span>คิดเลข</span></button>
+    <button class="tool-btn scratch-btn" id="btnScratch" title="กระดาษทด">📝<span>กระดาษทด</span></button>
   </section>
 
   <main class="canvas-wrap">
@@ -68,6 +69,20 @@
     </div>
     <input id="calcDisplay" class="calc-display" readonly value="0" />
     <div class="calc-grid" id="calcGrid"></div>
+  </div>
+
+  <div id="scratchpad" class="scratchpad hidden">
+    <div class="scratch-header">
+      <span>📝 กระดาษทด</span>
+      <div class="scratch-tools">
+        <button class="scratch-tool active" data-mode="pen" title="ปากกา">✏️</button>
+        <button class="scratch-tool" data-mode="eraser" title="ยางลบ">🧽</button>
+        <span class="scratch-colors"></span>
+        <button class="scratch-tool scratch-clear" title="ล้างกระดาษทด">🧹</button>
+      </div>
+      <button class="scratch-close" title="ปิด">✕</button>
+    </div>
+    <canvas class="scratch-canvas"></canvas>
   </div>
 
   <footer class="app-footer">

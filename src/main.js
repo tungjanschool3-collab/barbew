@@ -1,5 +1,6 @@
 import { BarModelEditor } from "./editor.js";
 import { mountLogo3D } from "./logo3d.js";
+import { ScratchPad } from "./scratchpad.js";
 
 // ---- 3D logo ----
 mountLogo3D(document.getElementById("logo3d"));
@@ -186,3 +187,7 @@ document.getElementById("btnCalc").addEventListener("click", () => {
 document.getElementById("calcClose").addEventListener("click", () => {
   calc.classList.add("hidden");
 });
+
+// ---- scratch paper (freehand pen/finger drawing area) ----
+const scratchPad = new ScratchPad(document.getElementById("scratchpad"));
+document.getElementById("btnScratch").addEventListener("click", () => scratchPad.toggle());
