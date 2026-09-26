@@ -23,10 +23,13 @@
       <button id="btnPrevProblem" class="pill-btn" title="ข้อก่อนหน้า">◀</button>
       <span id="problemIndex" class="problem-index">ข้อที่ 1/1</span>
       <button id="btnNextProblem" class="pill-btn" title="ข้อถัดไป">▶</button>
+      <button id="btnNewProblem" class="pill-btn new-btn" title="เพิ่มข้อใหม่">➕ ข้อใหม่</button>
+      <button id="btnSaveProblem" class="pill-btn save-btn" title="บันทึกโจทย์ข้อนี้">💾 บันทึก</button>
       <label class="upload-btn pill-btn">
-        📁 อัปโหลดโจทย์
+        📁 อัปโหลดไฟล์
         <input type="file" id="fileUpload" accept=".txt" hidden multiple />
       </label>
+      <span id="saveStatus" class="save-status"></span>
       <label class="fontsize-label">
         ขนาดตัวอักษร
         <input type="range" id="fontSizeRange" min="14" max="48" value="22" />

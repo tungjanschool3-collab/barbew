@@ -101,6 +101,17 @@ body {
 }
 .pill-btn:hover { transform: scale(1.05); }
 .upload-btn { background: var(--green); display: inline-flex; align-items: center; }
+.new-btn { background: var(--blue); }
+.save-btn { background: var(--purple); }
+
+.save-status {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  min-height: 1.2em;
+  transition: opacity 0.3s ease;
+}
+.save-status.hidden { opacity: 0; }
 
 .problem-index {
   font-weight: 700;
@@ -128,6 +139,7 @@ body {
   font-family: inherit;
   color: var(--ink);
   background: #fffdf6;
+  text-align: center;
 }
 .problem-text:focus { outline: 3px solid var(--pink); }
 
