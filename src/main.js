@@ -20,9 +20,26 @@ toolButtons.forEach((btn) => {
 });
 document.querySelector('.tool-btn[data-tool="select"]').classList.add("active");
 
-document.getElementById("colorPicker").addEventListener("input", (e) => {
-  editor.setColor(e.target.value);
+const TOOLBAR_COLORS = [
+  "#ff6b6b", "#ffa94d", "#ffd93d", "#6bcb77", "#4d96ff",
+  "#a06cd5", "#ff6b9d", "#2ec4b6", "#845ec2", "#2d3142",
+];
+const colorPalette = document.getElementById("colorPalette");
+const colorSwatches = TOOLBAR_COLORS.map((c) => {
+  const sw = document.createElement("button");
+  sw.type = "button";
+  sw.className = "color-swatch";
+  sw.style.background = c;
+  if (c === TOOLBAR_COLORS[0]) sw.classList.add("active");
+  sw.addEventListener("click", () => {
+    editor.setColor(c);
+    colorSwatches.forEach((s) => s.classList.remove("active"));
+    sw.classList.add("active");
+  });
+  colorPalette.appendChild(sw);
+  return sw;
 });
+editor.setColor(TOOLBAR_COLORS[0]);
 
 document.getElementById("btnCopy").addEventListener("click", () => editor.copySelected());
 document.getElementById("btnPaste").addEventListener("click", () => editor.pasteClipboard());

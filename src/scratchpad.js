@@ -17,6 +17,7 @@ export class ScratchPad {
 
     this._buildToolbar();
     this._bindDrawing();
+    this._bindDragging();
     this._resize();
     window.addEventListener("resize", () => this._resize());
   }
@@ -71,6 +72,47 @@ export class ScratchPad {
   _syncToolButtons() {
     this.penBtn.classList.toggle("active", this.mode === "pen");
     this.eraserBtn.classList.toggle("active", this.mode === "eraser");
+  }
+
+  _bindDragging() {
+    const header = this.panel.querySelector(".scratch-header");
+    header.style.touchAction = "none";
+    header.style.cursor = "grab";
+    let startX, startY, startLeft, startTop;
+
+    const onMove = (e) => {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const maxLeft = window.innerWidth - 60;
+      const maxTop = window.innerHeight - 40;
+      this.panel.style.left = Math.min(maxLeft, Math.max(-this.panel.offsetWidth + 60, startLeft + dx)) + "px";
+      this.panel.style.top = Math.min(maxTop, Math.max(0, startTop + dy)) + "px";
+      this.panel.style.right = "auto";
+      this.panel.style.bottom = "auto";
+    };
+    const onUp = (e) => {
+      header.releasePointerCapture(e.pointerId);
+      header.removeEventListener("pointermove", onMove);
+      header.removeEventListener("pointerup", onUp);
+      header.style.cursor = "grab";
+    };
+
+    header.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button")) return;
+      const rect = this.panel.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+      this.panel.style.left = startLeft + "px";
+      this.panel.style.top = startTop + "px";
+      this.panel.style.right = "auto";
+      this.panel.style.bottom = "auto";
+      header.setPointerCapture(e.pointerId);
+      header.style.cursor = "grabbing";
+      header.addEventListener("pointermove", onMove);
+      header.addEventListener("pointerup", onUp, { once: true });
+    });
   }
 
   _resize() {

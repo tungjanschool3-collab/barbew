@@ -151,10 +151,17 @@ export class BarModelEditor {
 
     if (this.tool === "select") {
       const hit = this._hitTest(x, y);
-      if (hit && hit.handle === "resize") {
+      if (hit && hit.handle) {
         this._pushHistory();
         this.selectedId = hit.obj.id;
-        this.drag = { mode: "resize", obj: hit.obj, startX: x, startY: y, orig: { ...hit.obj } };
+        this.drag = {
+          mode: "resize",
+          handle: hit.handle,
+          obj: hit.obj,
+          startX: x,
+          startY: y,
+          orig: { ...hit.obj },
+        };
       } else if (hit) {
         this._pushHistory();
         this.selectedId = hit.obj.id;
@@ -240,11 +247,34 @@ export class BarModelEditor {
     } else if (this.drag.mode === "resize") {
       const obj = this.drag.obj;
       const orig = this.drag.orig;
+      const dx = x - this.drag.startX;
+      const dy = y - this.drag.startY;
       if (obj.type === "bar") {
-        obj.w = Math.max(20, orig.w + (x - this.drag.startX));
-        obj.h = Math.max(20, orig.h + (y - this.drag.startY));
+        const MIN = 20;
+        switch (this.drag.handle) {
+          case "se":
+            obj.w = Math.max(MIN, orig.w + dx);
+            obj.h = Math.max(MIN, orig.h + dy);
+            break;
+          case "ne":
+            obj.w = Math.max(MIN, orig.w + dx);
+            obj.h = Math.max(MIN, orig.h - dy);
+            obj.y = orig.y + orig.h - obj.h;
+            break;
+          case "sw":
+            obj.w = Math.max(MIN, orig.w - dx);
+            obj.x = orig.x + orig.w - obj.w;
+            obj.h = Math.max(MIN, orig.h + dy);
+            break;
+          case "nw":
+            obj.w = Math.max(MIN, orig.w - dx);
+            obj.x = orig.x + orig.w - obj.w;
+            obj.h = Math.max(MIN, orig.h - dy);
+            obj.y = orig.y + orig.h - obj.h;
+            break;
+        }
       } else if (obj.type === "bracket" || obj.type === "brace") {
-        obj.w = Math.max(30, orig.w + (x - this.drag.startX));
+        obj.w = Math.max(30, orig.w + dx);
       }
     }
   }
@@ -290,9 +320,14 @@ export class BarModelEditor {
     for (let i = this.objects.length - 1; i >= 0; i--) {
       const o = this.objects[i];
       if (o.type === "bar") {
-        if (Math.abs(px - (o.x + o.w)) < tol && Math.abs(py - (o.y + o.h / 2)) < tol) {
-          return { obj: o, handle: "resize" };
-        }
+        const corners = [
+          { hx: o.x, hy: o.y, handle: "nw" },
+          { hx: o.x + o.w, hy: o.y, handle: "ne" },
+          { hx: o.x, hy: o.y + o.h, handle: "sw" },
+          { hx: o.x + o.w, hy: o.y + o.h, handle: "se" },
+        ];
+        const corner = corners.find((c) => Math.abs(px - c.hx) < tol && Math.abs(py - c.hy) < tol);
+        if (corner) return { obj: o, handle: corner.handle };
         if (px >= o.x && px <= o.x + o.w && py >= o.y && py <= o.y + o.h) {
           return { obj: o };
         }
@@ -448,7 +483,12 @@ export class BarModelEditor {
         ctx.textBaseline = "middle";
         ctx.fillText(o.label, o.x + o.w / 2, o.y + o.h / 2);
       }
-      if (selected) drawHandle(ctx, o.x + o.w, o.y + o.h / 2);
+      if (selected) {
+        drawHandle(ctx, o.x, o.y);
+        drawHandle(ctx, o.x + o.w, o.y);
+        drawHandle(ctx, o.x, o.y + o.h);
+        drawHandle(ctx, o.x + o.w, o.y + o.h);
+      }
     } else if (o.type === "line") {
       ctx.strokeStyle = o.color;
       ctx.lineWidth = 3;

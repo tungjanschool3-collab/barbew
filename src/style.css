@@ -174,14 +174,27 @@ body {
   margin: 0 4px;
 }
 
-#colorPicker {
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 10px;
+.color-palette {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  max-width: 210px;
+  padding: 2px;
+}
+
+.color-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   cursor: pointer;
-  background: none;
   padding: 0;
+  flex: none;
+}
+.color-swatch.active {
+  border-color: var(--ink);
+  transform: scale(1.15);
 }
 
 .zoom-label {
