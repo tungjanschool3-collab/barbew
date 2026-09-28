@@ -68,6 +68,21 @@ window.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); editor.undo(); }
   if ((e.ctrlKey || e.metaKey) && e.key === "c") { e.preventDefault(); editor.copySelected(); }
   if ((e.ctrlKey || e.metaKey) && e.key === "v") { e.preventDefault(); editor.pasteClipboard(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "=")) {
+    e.preventDefault();
+    editor.zoomBy(0.1);
+    updateZoomLabel();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === "-") {
+    e.preventDefault();
+    editor.zoomBy(-0.1);
+    updateZoomLabel();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === "0") {
+    e.preventDefault();
+    editor.zoomBy(1 - editor.scale);
+    updateZoomLabel();
+  }
   if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); editor.deleteSelected(); }
 });
 
