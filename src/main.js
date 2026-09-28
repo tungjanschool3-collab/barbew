@@ -1,14 +1,21 @@
 import { BarModelEditor } from "./editor.js";
-import { mountLogo3D } from "./logo3d.js";
 import { ScratchPad } from "./scratchpad.js";
-
-// ---- 3D logo ----
-mountLogo3D(document.getElementById("logo3d"));
 
 // ---- editor ----
 const canvas = document.getElementById("canvas");
 const wrap = document.querySelector(".canvas-wrap");
 const editor = new BarModelEditor(canvas, wrap);
+
+// ---- 3D logo ----
+// Three.js (~500KB) is purely decorative here, so load it lazily after
+// the app itself is interactive rather than blocking the initial bundle.
+const startLogo3D = () =>
+  import("./logo3d.js").then(({ mountLogo3D }) => mountLogo3D(document.getElementById("logo3d")));
+if ("requestIdleCallback" in window) {
+  requestIdleCallback(startLogo3D, { timeout: 2000 });
+} else {
+  setTimeout(startLogo3D, 300);
+}
 
 const toolButtons = document.querySelectorAll(".tool-btn[data-tool]");
 toolButtons.forEach((btn) => {
@@ -49,18 +56,13 @@ document.getElementById("btnUndo").addEventListener("click", () => editor.undo()
 document.getElementById("btnClear").addEventListener("click", () => {
   if (confirm("ล้างภาพทั้งหมดหรือไม่?")) editor.clearAll();
 });
-document.getElementById("btnZoomIn").addEventListener("click", () => {
-  editor.zoomBy(0.1);
-  updateZoomLabel();
-});
-document.getElementById("btnZoomOut").addEventListener("click", () => {
-  editor.zoomBy(-0.1);
-  updateZoomLabel();
-});
+document.getElementById("btnZoomIn").addEventListener("click", () => editor.zoomBy(0.1));
+document.getElementById("btnZoomOut").addEventListener("click", () => editor.zoomBy(-0.1));
 function updateZoomLabel() {
   document.getElementById("zoomLabel").textContent = Math.round(editor.scale * 100) + "%";
 }
-setInterval(updateZoomLabel, 200);
+editor.onZoomChange = updateZoomLabel;
+updateZoomLabel();
 
 // keyboard shortcuts
 window.addEventListener("keydown", (e) => {
@@ -72,17 +74,14 @@ window.addEventListener("keydown", (e) => {
   if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "=")) {
     e.preventDefault();
     editor.zoomBy(0.1);
-    updateZoomLabel();
   }
   if ((e.ctrlKey || e.metaKey) && e.key === "-") {
     e.preventDefault();
     editor.zoomBy(-0.1);
-    updateZoomLabel();
   }
   if ((e.ctrlKey || e.metaKey) && e.key === "0") {
     e.preventDefault();
     editor.zoomBy(1 - editor.scale);
-    updateZoomLabel();
   }
   if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); editor.deleteSelected(); }
 });

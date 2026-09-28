@@ -21,11 +21,28 @@ export class BarModelEditor {
     this.pointers = new Map();
     this.pinchStartDist = null;
     this.pinchStartScale = 1;
+    this.onZoomChange = null;
 
+    this._drawScheduled = false;
     this._bindEvents();
     this._resize();
-    window.addEventListener("resize", () => this._resize());
-    this._raf = requestAnimationFrame(() => this._loop());
+    window.addEventListener("resize", () => {
+      this._resize();
+      this._scheduleDraw();
+    });
+    this._scheduleDraw();
+  }
+
+  // Redraws are event-driven (scheduled on the next animation frame only
+  // when something actually changed) instead of looping forever, so the
+  // canvas stays idle — and off the CPU/battery — between edits.
+  _scheduleDraw() {
+    if (this._drawScheduled) return;
+    this._drawScheduled = true;
+    requestAnimationFrame(() => {
+      this._drawScheduled = false;
+      this._draw();
+    });
   }
 
   setTool(tool) {
@@ -43,12 +60,15 @@ export class BarModelEditor {
 
   zoomBy(delta) {
     this.scale = Math.min(3, Math.max(0.4, +(this.scale + delta).toFixed(2)));
+    this._scheduleDraw();
+    if (this.onZoomChange) this.onZoomChange();
   }
 
   clearAll() {
     this._pushHistory();
     this.objects = [];
     this.selectedId = null;
+    this._scheduleDraw();
   }
 
   undo() {
@@ -56,6 +76,7 @@ export class BarModelEditor {
     if (prev) {
       this.objects = prev;
       this.selectedId = null;
+      this._scheduleDraw();
     }
   }
 
@@ -64,6 +85,7 @@ export class BarModelEditor {
     this._pushHistory();
     this.objects = this.objects.filter((o) => o.id !== this.selectedId);
     this.selectedId = null;
+    this._scheduleDraw();
   }
 
   copySelected() {
@@ -79,6 +101,7 @@ export class BarModelEditor {
     this._offsetObject(copy, 24, 24);
     this.objects.push(copy);
     this.selectedId = copy.id;
+    this._scheduleDraw();
   }
 
   // ---------- internal ----------
@@ -120,11 +143,14 @@ export class BarModelEditor {
 
   _bindEvents() {
     const c = this.canvas;
-    c.addEventListener("pointerdown", (e) => this._onDown(e));
-    c.addEventListener("pointermove", (e) => this._onMove(e));
-    window.addEventListener("pointerup", (e) => this._onUp(e));
-    c.addEventListener("pointercancel", (e) => this._onUp(e));
-    c.addEventListener("dblclick", (e) => this._onDblClick(e));
+    // Every handler may mutate objects/drag/scale via various internal
+    // branches and early returns, so schedule a redraw unconditionally
+    // right after each one runs rather than threading it through them.
+    c.addEventListener("pointerdown", (e) => { this._onDown(e); this._scheduleDraw(); });
+    c.addEventListener("pointermove", (e) => { this._onMove(e); this._scheduleDraw(); });
+    window.addEventListener("pointerup", (e) => { this._onUp(e); this._scheduleDraw(); });
+    c.addEventListener("pointercancel", (e) => { this._onUp(e); this._scheduleDraw(); });
+    c.addEventListener("dblclick", (e) => { this._onDblClick(e); this._scheduleDraw(); });
     c.addEventListener(
       "wheel",
       (e) => {
@@ -203,6 +229,7 @@ export class BarModelEditor {
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       const ratio = dist / this.pinchStartDist;
       this.scale = Math.min(3, Math.max(0.4, +(this.pinchStartScale * ratio).toFixed(2)));
+      if (this.onZoomChange) this.onZoomChange();
       return;
     }
 
@@ -435,6 +462,7 @@ export class BarModelEditor {
           color: this.color,
         });
       }
+      this._scheduleDraw();
     };
 
     div.addEventListener("blur", commit, { once: true });
@@ -468,11 +496,6 @@ export class BarModelEditor {
   }
 
   // ---------- render ----------
-
-  _loop() {
-    this._draw();
-    this._raf = requestAnimationFrame(() => this._loop());
-  }
 
   _draw() {
     const ctx = this.ctx;
