@@ -173,6 +173,7 @@ body {
   transition: transform .1s ease, background .15s ease;
 }
 .tool-btn span { font-size: 10px; font-weight: 600; color: var(--ink); }
+.symbol-btn { font-size: 22px; font-weight: 800; color: var(--purple); }
 .tool-btn:hover { transform: translateY(-2px); }
 .tool-btn.active {
   background: var(--yellow);

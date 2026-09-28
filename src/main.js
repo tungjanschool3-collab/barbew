@@ -16,6 +16,7 @@ toolButtons.forEach((btn) => {
     toolButtons.forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     editor.setTool(btn.dataset.tool);
+    if (btn.dataset.symbol) editor.setPendingSymbol(btn.dataset.symbol);
   });
 });
 document.querySelector('.tool-btn[data-tool="select"]').classList.add("active");

@@ -14,6 +14,7 @@ export class BarModelEditor {
     this.clipboard = null;
     this.tool = "select";
     this.color = "#ff6b9d";
+    this.pendingSymbol = "+";
     this.scale = 1;
     this.history = [];
     this.drag = null; // { mode, obj, startX, startY, orig }
@@ -34,6 +35,10 @@ export class BarModelEditor {
 
   setColor(c) {
     this.color = c;
+  }
+
+  setPendingSymbol(s) {
+    this.pendingSymbol = s;
   }
 
   zoomBy(delta) {
@@ -178,6 +183,9 @@ export class BarModelEditor {
       this.drag = { mode: "create-span", spanType: this.tool, startX: x, startY: y, shift: e.shiftKey };
     } else if (this.tool === "text") {
       this._createTextAt(x, y);
+      this.drag = null;
+    } else if (this.tool === "symbol") {
+      this._placeSymbol(x, y);
       this.drag = null;
     } else if (this.tool === "scissors") {
       this._cutAt(x, y);
@@ -362,6 +370,22 @@ export class BarModelEditor {
 
   _createTextAt(x, y) {
     this._openInlineEditor({ x, y, existing: null });
+  }
+
+  _placeSymbol(x, y) {
+    if (!this.pendingSymbol) return;
+    this._pushHistory();
+    const obj = {
+      id: nextId(),
+      type: "text",
+      x,
+      y,
+      text: this.pendingSymbol,
+      fontSize: 40,
+      color: this.color,
+    };
+    this.objects.push(obj);
+    this.selectedId = obj.id;
   }
 
   _editLabelFor(obj) {
