@@ -126,7 +126,9 @@ export class ScratchPad {
 
   _bindDrawing() {
     const c = this.canvas;
-    c.style.touchAction = "none";
+    // Block panning so one-finger drawing never scrolls the page, but
+    // still let iPad/iOS handle native two-finger pinch-zoom.
+    c.style.touchAction = "pinch-zoom";
     c.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       c.setPointerCapture(e.pointerId);

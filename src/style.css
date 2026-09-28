@@ -227,7 +227,10 @@ body {
   background:
     repeating-linear-gradient(0deg, #ffffff 0 39px, #f1f1fb 39px 40px),
     repeating-linear-gradient(90deg, #ffffff 0 39px, #f1f1fb 39px 40px);
-  touch-action: none;
+  /* Block single/two-finger panning (so one-finger drawing never
+     scrolls the page) but still let iPad/iOS handle its native
+     two-finger pinch-zoom of the whole screen. */
+  touch-action: pinch-zoom;
 }
 
 #canvas {
