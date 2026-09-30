@@ -224,15 +224,43 @@ body {
 .canvas-wrap {
   flex: 1;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-behavior: smooth;
   background:
     repeating-linear-gradient(0deg, #ffffff 0 39px, #f1f1fb 39px 40px),
     repeating-linear-gradient(90deg, #ffffff 0 39px, #f1f1fb 39px 40px);
   /* Block single/two-finger panning (so one-finger drawing never
      scrolls the page) but still let iPad/iOS handle its native
-     two-finger pinch-zoom of the whole screen. */
+     two-finger pinch-zoom of the whole screen. Vertical scrolling
+     through a tall multi-step drawing is done via the scroll
+     buttons or a mouse/trackpad wheel instead. */
   touch-action: pinch-zoom;
 }
+
+.scroll-btns {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 8;
+}
+.scroll-btn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: white;
+  color: var(--purple);
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+}
+.scroll-btn:hover { transform: translateY(-1px); }
 
 #canvas {
   display: block;

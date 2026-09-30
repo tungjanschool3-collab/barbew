@@ -22,6 +22,7 @@ export class BarModelEditor {
     this.pinchStartDist = null;
     this.pinchStartScale = 1;
     this.onZoomChange = null;
+    this._worldHeightPx = 0;
 
     this._drawScheduled = false;
     this._bindEvents();
@@ -137,13 +138,42 @@ export class BarModelEditor {
   }
 
   _resize() {
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this._applyCanvasSize(this._computeWorldHeight());
+  }
+
+  // The drawing surface grows taller than the visible viewport as content
+  // is added below the fold, so the workspace scrolls (the problem panel
+  // and toolbar sit outside this scroll area and stay visible) instead of
+  // being capped to one screenful.
+  _computeWorldHeight() {
+    const wrapH = this.wrap.clientHeight;
+    let maxBottom = 0;
+    const bottomOf = (o) => {
+      if (o.type === "line") return Math.max(o.y1, o.y2);
+      if (o.type === "bracket" || o.type === "brace") return o.y + Math.abs(o.dir || 1) * 50;
+      if (o.type === "text") return o.y + (o.fontSize || 24);
+      return (o.y || 0) + (o.h || 0);
+    };
+    for (const o of this.objects) {
+      const bottom = bottomOf(o);
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    if (this.drag && this.drag.preview) {
+      const bottom = bottomOf(this.drag.preview);
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    const contentBottomPx = maxBottom * this.scale + 200;
+    return Math.max(wrapH, contentBottomPx);
+  }
+
+  _applyCanvasSize(heightPx) {
     const rect = this.wrap.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
+    this.canvas.width = rect.width * this.dpr;
+    this.canvas.height = heightPx * this.dpr;
     this.canvas.style.width = rect.width + "px";
-    this.canvas.style.height = rect.height + "px";
-    this.dpr = dpr;
+    this.canvas.style.height = heightPx + "px";
+    this._worldHeightPx = heightPx;
   }
 
   _toWorld(clientX, clientY) {
@@ -511,6 +541,11 @@ export class BarModelEditor {
   // ---------- render ----------
 
   _draw() {
+    const desiredHeight = this._computeWorldHeight();
+    if (Math.abs(desiredHeight - this._worldHeightPx) > 0.5) {
+      this._applyCanvasSize(desiredHeight);
+    }
+
     const ctx = this.ctx;
     ctx.save();
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);

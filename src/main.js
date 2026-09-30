@@ -6,6 +6,13 @@ const canvas = document.getElementById("canvas");
 const wrap = document.querySelector(".canvas-wrap");
 const editor = new BarModelEditor(canvas, wrap);
 
+document.getElementById("btnScrollUp").addEventListener("click", () => {
+  wrap.scrollBy({ top: -240, behavior: "smooth" });
+});
+document.getElementById("btnScrollDown").addEventListener("click", () => {
+  wrap.scrollBy({ top: 240, behavior: "smooth" });
+});
+
 // ---- 3D logo ----
 // Three.js (~500KB) is purely decorative here, so load it lazily after
 // the app itself is interactive rather than blocking the initial bundle.
