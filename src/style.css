@@ -494,4 +494,23 @@ body {
   .calculator { right: 10px; bottom: 10px; width: 210px; }
   .answer-input { width: 140px; }
   .teacher-field { margin-left: 0; }
+
+  /* A 5-row wrapped toolbar left almost no vertical room for the
+     drawing canvas on phones. Collapse it to one horizontally
+     scrollable row instead, so the canvas always has real height. */
+  .toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tool-btn { flex: none; }
+  .tool-sep { flex: none; }
+  .color-palette { flex-wrap: nowrap; max-width: none; flex: none; }
+  .color-swatch { flex: none; }
+  #zoomLabel { flex: none; white-space: nowrap; }
+
+  /* Guarantee the canvas is always visible with real height, even if
+     everything above it runs tall on a short phone screen. */
+  .canvas-wrap { min-height: 45vh; flex: 1 1 45vh; }
 }
