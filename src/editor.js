@@ -23,6 +23,7 @@ export class BarModelEditor {
     this.pinchStartScale = 1;
     this.onZoomChange = null;
     this._worldHeightPx = 0;
+    this._pendingLongPress = null;
 
     this._drawScheduled = false;
     this._bindEvents();
@@ -314,12 +315,36 @@ export class BarModelEditor {
         this.selectedId = null;
         this.drag = { mode: "pan", startClientY: e.clientY, startScrollTop: this.wrap.scrollTop };
       }
-    } else if (this.tool === "bar") {
-      this.drag = { mode: "create-bar", startX: x, startY: y, obj: null };
-    } else if (this.tool === "line" || this.tool === "dashed") {
-      this.drag = { mode: "create-line", startX: x, startY: y, dashed: this.tool === "dashed" };
-    } else if (this.tool === "bracket" || this.tool === "brace") {
-      this.drag = { mode: "create-span", spanType: this.tool, startX: x, startY: y, shift: e.shiftKey };
+    } else if (["bar", "line", "dashed", "bracket", "brace"].includes(this.tool)) {
+      const hit = this._hitTest(x, y);
+      if (hit && !hit.handle) {
+        // Long-press an existing shape to move it immediately, without
+        // switching to the select tool first. Dragging right away still
+        // draws normally (see the movement check in _onMove), so the
+        // tool's usual gesture is unaffected.
+        this.drag = null;
+        this._pendingLongPress = {
+          pointerId: e.pointerId,
+          startX: x,
+          startY: y,
+          shiftKey: e.shiftKey,
+          timer: setTimeout(() => {
+            this._pushHistory();
+            this.selectedId = hit.obj.id;
+            this.drag = {
+              mode: "move",
+              obj: hit.obj,
+              startX: x,
+              startY: y,
+              orig: JSON.parse(JSON.stringify(hit.obj)),
+            };
+            this._pendingLongPress = null;
+            this._scheduleDraw();
+          }, 380),
+        };
+      } else {
+        this._beginCreateDrag(x, y, e.shiftKey);
+      }
     } else if (this.tool === "text") {
       this._createTextAt(x, y);
       this.drag = null;
@@ -329,6 +354,16 @@ export class BarModelEditor {
     } else if (this.tool === "scissors") {
       this._cutAt(x, y);
       this.drag = null;
+    }
+  }
+
+  _beginCreateDrag(x, y, shiftKey) {
+    if (this.tool === "bar") {
+      this.drag = { mode: "create-bar", startX: x, startY: y, obj: null };
+    } else if (this.tool === "line" || this.tool === "dashed") {
+      this.drag = { mode: "create-line", startX: x, startY: y, dashed: this.tool === "dashed" };
+    } else if (this.tool === "bracket" || this.tool === "brace") {
+      this.drag = { mode: "create-span", spanType: this.tool, startX: x, startY: y, shift: shiftKey };
     }
   }
 
@@ -344,6 +379,18 @@ export class BarModelEditor {
       this.scale = Math.min(3, Math.max(0.4, +(this.pinchStartScale * ratio).toFixed(2)));
       if (this.onZoomChange) this.onZoomChange();
       return;
+    }
+
+    if (this._pendingLongPress && this._pendingLongPress.pointerId === e.pointerId) {
+      const p = this._toWorld(e.clientX, e.clientY);
+      const dx = p.x - this._pendingLongPress.startX;
+      const dy = p.y - this._pendingLongPress.startY;
+      if (Math.hypot(dx, dy) > 6 / this.scale) {
+        clearTimeout(this._pendingLongPress.timer);
+        const { startX, startY, shiftKey } = this._pendingLongPress;
+        this._pendingLongPress = null;
+        this._beginCreateDrag(startX, startY, shiftKey);
+      }
     }
 
     if (!this.drag) return;
@@ -444,6 +491,11 @@ export class BarModelEditor {
   _onUp(e) {
     this.pointers.delete(e.pointerId);
     if (this.pointers.size < 2) this.pinchStartDist = null;
+
+    if (this._pendingLongPress && this._pendingLongPress.pointerId === e.pointerId) {
+      clearTimeout(this._pendingLongPress.timer);
+      this._pendingLongPress = null;
+    }
 
     if (!this.drag) return;
     const d = this.drag;
