@@ -13,6 +13,11 @@ document.getElementById("btnScrollDown").addEventListener("click", () => {
   wrap.scrollBy({ top: 240, behavior: "smooth" });
 });
 
+document.getElementById("btnAddStep").addEventListener("click", () => {
+  editor.addStep();
+  setTimeout(() => wrap.scrollTo({ top: wrap.scrollHeight, behavior: "smooth" }), 60);
+});
+
 // ---- 3D logo ----
 // Three.js (~500KB) is purely decorative here, so load it lazily after
 // the app itself is interactive rather than blocking the initial bundle.

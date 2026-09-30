@@ -126,6 +126,48 @@ export class BarModelEditor {
     this._scheduleDraw();
   }
 
+  // Adds a new "ขั้นที่ N หา ... (ให้เติมเอง)" fill-in-the-blank heading
+  // plus an empty dashed frame below it to draw that step's bar model in,
+  // stacked below whatever's already on the canvas. Can be called
+  // repeatedly to keep building a multi-step worked solution.
+  addStep() {
+    this._pushHistory();
+    let maxN = 0;
+    for (const o of this.objects) {
+      if (o.type === "text") {
+        const m = /^ขั้นที่\s*(\d+)/.exec(o.text || "");
+        if (m) maxN = Math.max(maxN, parseInt(m[1], 10));
+      }
+    }
+    const stepNum = maxN + 1;
+    const bottom = this._contentBottomWorld();
+    const startY = bottom > 0 ? bottom + 50 : 20;
+    const frameW = Math.max(480, this.wrap.clientWidth / this.scale - 80);
+
+    const label = {
+      id: nextId(),
+      type: "text",
+      x: 20,
+      y: startY,
+      text: `ขั้นที่ ${stepNum} หา ......................... (ให้เติมเอง)`,
+      fontSize: 22,
+      color: "#3a2e50",
+    };
+    const frame = {
+      id: nextId(),
+      type: "frame",
+      x: 20,
+      y: startY + 16,
+      w: frameW,
+      h: 220,
+      color: "#a06cd5",
+    };
+    this.objects.push(label, frame);
+    this.selectedId = null;
+    this._scheduleDraw();
+    this._editLabelFor(label);
+  }
+
   // ---------- internal ----------
 
   _offsetObject(o, dx, dy) {
@@ -150,28 +192,35 @@ export class BarModelEditor {
     this._applyCanvasSize(this._computeWorldHeight());
   }
 
+  // Bottom edge (world/unscaled coordinates) of one object.
+  _objectBottom(o) {
+    if (o.type === "line") return Math.max(o.y1, o.y2);
+    if (o.type === "bracket" || o.type === "brace") return o.y + Math.abs(o.dir || 1) * 50;
+    if (o.type === "text") return o.y + (o.fontSize || 24);
+    return (o.y || 0) + (o.h || 0);
+  }
+
+  // Furthest-down edge of everything currently drawn, in world coordinates.
+  _contentBottomWorld() {
+    let maxBottom = 0;
+    for (const o of this.objects) {
+      const bottom = this._objectBottom(o);
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    if (this.drag && this.drag.preview) {
+      const bottom = this._objectBottom(this.drag.preview);
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    return maxBottom;
+  }
+
   // The drawing surface grows taller than the visible viewport as content
   // is added below the fold, so the workspace scrolls (the problem panel
   // and toolbar sit outside this scroll area and stay visible) instead of
   // being capped to one screenful.
   _computeWorldHeight() {
     const wrapH = this.wrap.clientHeight;
-    let maxBottom = 0;
-    const bottomOf = (o) => {
-      if (o.type === "line") return Math.max(o.y1, o.y2);
-      if (o.type === "bracket" || o.type === "brace") return o.y + Math.abs(o.dir || 1) * 50;
-      if (o.type === "text") return o.y + (o.fontSize || 24);
-      return (o.y || 0) + (o.h || 0);
-    };
-    for (const o of this.objects) {
-      const bottom = bottomOf(o);
-      if (bottom > maxBottom) maxBottom = bottom;
-    }
-    if (this.drag && this.drag.preview) {
-      const bottom = bottomOf(this.drag.preview);
-      if (bottom > maxBottom) maxBottom = bottom;
-    }
-    const contentBottomPx = maxBottom * this.scale + 200;
+    const contentBottomPx = this._contentBottomWorld() * this.scale + 200;
     return Math.max(wrapH, contentBottomPx);
   }
 
@@ -335,7 +384,7 @@ export class BarModelEditor {
       const orig = this.drag.orig;
       const dx = x - this.drag.startX;
       const dy = y - this.drag.startY;
-      if (obj.type === "bar") {
+      if (obj.type === "bar" || obj.type === "frame") {
         const MIN = 20;
         switch (this.drag.handle) {
           case "se":
@@ -405,7 +454,7 @@ export class BarModelEditor {
     const tol = 8 / this.scale;
     for (let i = this.objects.length - 1; i >= 0; i--) {
       const o = this.objects[i];
-      if (o.type === "bar") {
+      if (o.type === "bar" || o.type === "frame") {
         const corners = [
           { hx: o.x, hy: o.y, handle: "nw" },
           { hx: o.x + o.w, hy: o.y, handle: "ne" },
@@ -604,6 +653,22 @@ export class BarModelEditor {
       if (selected) {
         drawHandle(ctx, o.x1, o.y1);
         drawHandle(ctx, o.x2, o.y2);
+      }
+    } else if (o.type === "frame") {
+      // An empty dashed guide box (from "เพิ่มขั้นตอน") for drawing a
+      // step's bar model inside — outline only, never filled, so it
+      // never covers objects drawn on top of it.
+      ctx.strokeStyle = selected ? "#333" : o.color || "#a06cd5";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([12, 8]);
+      roundRect(ctx, o.x, o.y, o.w, o.h, 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      if (selected) {
+        drawHandle(ctx, o.x, o.y);
+        drawHandle(ctx, o.x + o.w, o.y);
+        drawHandle(ctx, o.x, o.y + o.h);
+        drawHandle(ctx, o.x + o.w, o.y + o.h);
       }
     } else if (o.type === "bracket") {
       ctx.strokeStyle = o.color;
