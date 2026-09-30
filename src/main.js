@@ -324,6 +324,31 @@ document.getElementById("calcClose").addEventListener("click", () => {
   calc.classList.add("hidden");
 });
 
+// Calculator keyboard input: digits, ., + - * / (mapped to our −/×/÷),
+// Enter/= to compute, Escape/C to clear, Backspace to delete a digit.
+const CALC_KEY_MAP = { "*": "×", "/": "÷", "-": "−" };
+window.addEventListener("keydown", (e) => {
+  if (calc.classList.contains("hidden")) return;
+  const tag = document.activeElement.tagName;
+  if (tag === "TEXTAREA" || tag === "INPUT" || document.activeElement.isContentEditable) return;
+
+  const key = CALC_KEY_MAP[e.key] || e.key;
+  if (/^[0-9]$/.test(key) || key === "." || ["+", "−", "×", "÷"].includes(key)) {
+    e.preventDefault();
+    calcInput(key);
+  } else if (key === "Enter" || key === "=") {
+    e.preventDefault();
+    calcInput("=");
+  } else if (key === "Escape" || key === "c" || key === "C") {
+    e.preventDefault();
+    calcInput("C");
+  } else if (key === "Backspace") {
+    e.preventDefault();
+    calcState.curr = calcState.curr.length > 1 ? calcState.curr.slice(0, -1) : "0";
+    renderCalc();
+  }
+});
+
 // ---- scratch paper (freehand pen/finger drawing area) ----
 const scratchPad = new ScratchPad(document.getElementById("scratchpad"));
 document.getElementById("btnScratch").addEventListener("click", () => scratchPad.toggle());
