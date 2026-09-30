@@ -257,55 +257,83 @@ const keys = [
   ["0", ""], [".", ""], ["=", "eq"],
 ];
 
-let calcState = { curr: "0", prev: null, op: null, reset: false };
+// Shows the whole running expression as it's typed (e.g. "1.2+3.4−5.2")
+// rather than collapsing to an intermediate result after each operator,
+// and evaluates it with normal order of operations (×÷ before +−).
+let calcExpr = "";
+let calcJustEvaluated = false;
 
 function renderCalc() {
-  calcDisplay.value = calcState.curr;
+  calcDisplay.value = calcExpr || "0";
+  calcDisplay.scrollLeft = calcDisplay.scrollWidth;
+}
+
+function evalExpression(expr) {
+  const tokens = expr.match(/\d+\.?\d*|\.\d+|[+\-−×÷]/g) || [];
+  if (!tokens.length) return 0;
+
+  let i = 0;
+  const terms = [];
+  if (tokens[0] === "-" || tokens[0] === "−") {
+    terms.push(-parseFloat(tokens[1] ?? "0"));
+    i = 2;
+  } else {
+    terms.push(parseFloat(tokens[0]));
+    i = 1;
+  }
+  while (i < tokens.length - 1) {
+    const op = tokens[i];
+    const num = parseFloat(tokens[i + 1]);
+    if (op === "×") terms.push(terms.pop() * num);
+    else if (op === "÷") terms.push(num === 0 ? NaN : terms.pop() / num);
+    else terms.push(op, num);
+    i += 2;
+  }
+  let result = terms[0];
+  for (let j = 1; j < terms.length; j += 2) {
+    result = terms[j] === "+" ? result + terms[j + 1] : result - terms[j + 1];
+  }
+  return result;
 }
 
 function calcInput(key) {
+  if (calcJustEvaluated) {
+    if (/[0-9.]/.test(key)) calcExpr = "";
+    calcJustEvaluated = false;
+  }
+
   if (key === "C") {
-    calcState = { curr: "0", prev: null, op: null, reset: false };
+    calcExpr = "";
   } else if (key === "±") {
-    calcState.curr = String(parseFloat(calcState.curr || "0") * -1);
-  } else if (key === "%") {
-    calcState.curr = String(parseFloat(calcState.curr || "0") / 100);
-  } else if (["÷", "×", "−", "+"].includes(key)) {
-    if (calcState.prev !== null && !calcState.reset) calcCompute();
-    calcState.prev = calcState.curr;
-    calcState.op = key;
-    calcState.reset = true;
-  } else if (key === "=") {
-    calcCompute();
-    calcState.op = null;
-    calcState.prev = null;
-  } else if (key === ".") {
-    if (calcState.reset) { calcState.curr = "0"; calcState.reset = false; }
-    if (!calcState.curr.includes(".")) calcState.curr += ".";
-  } else {
-    if (calcState.reset || calcState.curr === "0") {
-      calcState.curr = key;
-      calcState.reset = false;
-    } else {
-      calcState.curr += key;
+    if (/^-?\d+\.?\d*$/.test(calcExpr)) {
+      calcExpr = calcExpr.startsWith("-") ? calcExpr.slice(1) : calcExpr ? "-" + calcExpr : "";
     }
+  } else if (key === "%") {
+    if (/^-?\d+\.?\d*$/.test(calcExpr) && calcExpr) {
+      calcExpr = String(parseFloat(calcExpr) / 100);
+    }
+  } else if (["÷", "×", "−", "+"].includes(key)) {
+    if (!calcExpr) {
+      if (key === "−") calcExpr = "-";
+    } else if (/[+\-−×÷]$/.test(calcExpr)) {
+      calcExpr = calcExpr.slice(0, -1) + key;
+    } else {
+      calcExpr += key;
+    }
+  } else if (key === "=") {
+    if (calcExpr) {
+      const clean = calcExpr.replace(/[+\-−×÷]$/, "");
+      const result = evalExpression(clean);
+      calcExpr = String(Math.round(result * 1e8) / 1e8);
+      calcJustEvaluated = true;
+    }
+  } else if (key === ".") {
+    const m = calcExpr.match(/(\d*\.?\d*)$/);
+    if (m && !m[0].includes(".")) calcExpr += m[0] === "" ? "0." : ".";
+  } else {
+    calcExpr += key;
   }
   renderCalc();
-}
-
-function calcCompute() {
-  if (calcState.prev === null || calcState.op === null) return;
-  const a = parseFloat(calcState.prev);
-  const b = parseFloat(calcState.curr);
-  let r = 0;
-  switch (calcState.op) {
-    case "+": r = a + b; break;
-    case "−": r = a - b; break;
-    case "×": r = a * b; break;
-    case "÷": r = b === 0 ? NaN : a / b; break;
-  }
-  calcState.curr = String(Math.round(r * 1e8) / 1e8);
-  calcState.reset = true;
 }
 
 keys.forEach(([label, cls]) => {
@@ -344,7 +372,7 @@ window.addEventListener("keydown", (e) => {
     calcInput("C");
   } else if (key === "Backspace") {
     e.preventDefault();
-    calcState.curr = calcState.curr.length > 1 ? calcState.curr.slice(0, -1) : "0";
+    calcExpr = calcExpr.slice(0, -1);
     renderCalc();
   }
 });

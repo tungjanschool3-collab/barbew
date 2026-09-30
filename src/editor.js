@@ -53,6 +53,14 @@ export class BarModelEditor {
 
   setColor(c) {
     this.color = c;
+    // Also recolor whatever's currently selected, so picking a swatch
+    // after a bar already exists changes that bar's color right away.
+    const obj = this._findById(this.selectedId);
+    if (obj) {
+      this._pushHistory();
+      obj.color = c;
+      this._scheduleDraw();
+    }
   }
 
   setPendingSymbol(s) {
