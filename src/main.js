@@ -104,9 +104,13 @@ const fontSizeRange = document.getElementById("fontSizeRange");
 const problemIndexLabel = document.getElementById("problemIndex");
 const fileUpload = document.getElementById("fileUpload");
 const saveStatus = document.getElementById("saveStatus");
+const studentAnswerInput = document.getElementById("studentAnswerInput");
+const correctAnswerInput = document.getElementById("correctAnswerInput");
+const answerFeedback = document.getElementById("answerFeedback");
 
 const STORAGE_KEY = "barbew.problems";
 const DRAWINGS_KEY = "barbew.drawings";
+const ANSWERS_KEY = "barbew.answers";
 
 const DEFAULT_PROBLEMS = [
   "แม่ของมัดหมี่ซื้อเส้นขนมจีน 4 ถุง ถุงละ 2.5 กิโลกรัม นำไปทำขนมจีนทุ่งจานเลี้ยงพระ 3.5 กิโลกรัม เส้นที่เหลือแบ่งใส่ถุงเล็ก ถุงละ 0.5 กิโลกรัม เพื่อนำไปขาย จะได้กี่ถุง",
@@ -123,6 +127,12 @@ const DEFAULT_PROBLEMS = [
   "ร้านขายข้าวสารมีข้าวสาร 156.5 กิโลกรัม ขายไปวันแรก 42.25 กิโลกรัม และขายไปวันที่สองอีก 38.75 กิโลกรัม เหลือข้าวสารกี่กิโลกรัม",
   "คุณยายขายไข่ได้เงิน 275.5 บาท และขายผักได้เงินอีก 124.25 บาท แล้วซื้อปุ๋ยราคา 180.6 บาท คุณยายจะเหลือเงินกี่บาท",
   "นักเรียนวิ่งได้ระยะทาง 3.75 กิโลเมตรในวันจันทร์ และวิ่งเพิ่มอีก 2.4 กิโลเมตรในวันอังคาร ถ้าเป้าหมายทั้งสัปดาห์คือ 12 กิโลเมตร นักเรียนต้องวิ่งอีกกี่กิโลเมตรจึงจะครบเป้าหมาย",
+];
+
+// Correct answers matched 1:1 with DEFAULT_PROBLEMS above.
+const DEFAULT_ANSWERS = [
+  "13", "55", "728", "135.05", "2.7", "93", "9.25", "4.05",
+  "4.35", "450", "37.5", "75.5", "219.15", "5.85",
 ];
 
 function loadSavedProblems() {
@@ -162,14 +172,39 @@ function persistDrawings() {
   }
 }
 
-let problems = loadSavedProblems() || DEFAULT_PROBLEMS.slice();
+function loadSavedAnswers() {
+  try {
+    const raw = localStorage.getItem(ANSWERS_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistAnswers() {
+  try {
+    localStorage.setItem(ANSWERS_KEY, JSON.stringify(answers));
+  } catch {
+    // storage unavailable (private browsing, quota) — save silently fails
+  }
+}
+
+const savedProblems = loadSavedProblems();
+let problems = savedProblems || DEFAULT_PROBLEMS.slice();
 let drawings = loadSavedDrawings();
+let answers = loadSavedAnswers();
+if (!answers.length && !savedProblems) answers = DEFAULT_ANSWERS.slice();
 let currentIndex = 0;
 
 // Snapshot whatever is currently on the canvas into the drawing slot for
 // the problem we're about to navigate away from.
 function saveCurrentDrawing() {
   drawings[currentIndex] = editor.getObjects();
+}
+
+function saveCurrentAnswer() {
+  answers[currentIndex] = correctAnswerInput.value;
 }
 
 fontSizeRange.addEventListener("input", () => {
@@ -185,6 +220,10 @@ function renderProblem() {
   problemText.value = problems[currentIndex] || "";
   problemIndexLabel.textContent = `ข้อที่ ${currentIndex + 1}/${problems.length}`;
   editor.loadObjects(drawings[currentIndex] || []);
+  correctAnswerInput.value = answers[currentIndex] || "";
+  studentAnswerInput.value = "";
+  answerFeedback.textContent = "";
+  answerFeedback.className = "answer-feedback";
 }
 
 function flashSaveStatus(msg) {
@@ -196,19 +235,23 @@ function flashSaveStatus(msg) {
 
 document.getElementById("btnPrevProblem").addEventListener("click", () => {
   saveCurrentDrawing();
+  saveCurrentAnswer();
   currentIndex = (currentIndex - 1 + problems.length) % problems.length;
   renderProblem();
 });
 document.getElementById("btnNextProblem").addEventListener("click", () => {
   saveCurrentDrawing();
+  saveCurrentAnswer();
   currentIndex = (currentIndex + 1) % problems.length;
   renderProblem();
 });
 
 document.getElementById("btnNewProblem").addEventListener("click", () => {
   saveCurrentDrawing();
+  saveCurrentAnswer();
   problems.push("");
   drawings.push([]);
+  answers.push("");
   currentIndex = problems.length - 1;
   renderProblem();
   problemText.focus();
@@ -217,8 +260,10 @@ document.getElementById("btnNewProblem").addEventListener("click", () => {
 document.getElementById("btnSaveProblem").addEventListener("click", () => {
   problems[currentIndex] = problemText.value;
   saveCurrentDrawing();
+  saveCurrentAnswer();
   persistProblems();
   persistDrawings();
+  persistAnswers();
   flashSaveStatus("✅ บันทึกแล้ว");
 });
 
@@ -237,9 +282,11 @@ fileUpload.addEventListener("change", async (e) => {
   if (allProblems.length) {
     problems = allProblems;
     drawings = allProblems.map(() => []);
+    answers = allProblems.map(() => "");
     currentIndex = 0;
     persistProblems();
     persistDrawings();
+    persistAnswers();
     renderProblem();
     flashSaveStatus("✅ นำเข้าและบันทึกแล้ว");
   }
@@ -248,7 +295,43 @@ fileUpload.addEventListener("change", async (e) => {
 
 window.addEventListener("beforeunload", () => {
   saveCurrentDrawing();
+  saveCurrentAnswer();
   persistDrawings();
+  persistAnswers();
+});
+
+document.getElementById("btnCheckAnswer").addEventListener("click", () => {
+  const extractNumbers = (s) => {
+    const m = (s || "").match(/-?\d+(\.\d+)?/g);
+    return m ? m.map(Number) : [];
+  };
+  const correctNums = extractNumbers(correctAnswerInput.value);
+  const studentNums = extractNumbers(studentAnswerInput.value);
+
+  if (!correctNums.length) {
+    answerFeedback.textContent = "⚠️ ครูยังไม่ได้ตั้งเฉลยข้อนี้";
+    answerFeedback.className = "answer-feedback neutral";
+    return;
+  }
+  if (!studentNums.length) {
+    answerFeedback.textContent = "พิมพ์คำตอบก่อนนะ";
+    answerFeedback.className = "answer-feedback neutral";
+    return;
+  }
+
+  const correctVal = correctNums[correctNums.length - 1];
+  const studentVal = studentNums[studentNums.length - 1];
+  const isCorrect = Math.abs(correctVal - studentVal) < 0.005;
+
+  answerFeedback.textContent = isCorrect ? "✅ ถูกต้อง!" : "❌ ยังไม่ถูก ลองอีกครั้ง";
+  answerFeedback.className = "answer-feedback " + (isCorrect ? "correct" : "wrong");
+});
+
+studentAnswerInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.getElementById("btnCheckAnswer").click();
+  }
 });
 
 renderProblem();

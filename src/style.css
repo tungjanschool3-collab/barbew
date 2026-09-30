@@ -143,6 +143,50 @@ body {
 }
 .problem-text:focus { outline: 3px solid var(--pink); }
 
+.answer-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.answer-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.answer-input {
+  border: 2px solid var(--blue);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 15px;
+  font-family: inherit;
+  width: 190px;
+}
+.answer-input:focus { outline: 2px solid var(--pink); }
+
+.teacher-field {
+  margin-left: auto;
+  opacity: 0.85;
+}
+.teacher-answer { border-color: var(--purple); width: 150px; }
+
+.check-btn { background: var(--green); }
+
+.answer-feedback {
+  font-weight: 800;
+  font-size: 15px;
+  min-width: 90px;
+}
+.answer-feedback.correct { color: #2e9e4f; }
+.answer-feedback.wrong { color: #e0435a; }
+.answer-feedback.neutral { color: var(--purple); }
+
 /* Toolbar */
 .toolbar {
   display: flex;
@@ -448,4 +492,6 @@ body {
   .scratch-swatch { width: 16px; height: 16px; }
   .scratchpad { bottom: 10px; left: 10px; width: calc(100vw - 20px); }
   .calculator { right: 10px; bottom: 10px; width: 210px; }
+  .answer-input { width: 140px; }
+  .teacher-field { margin-left: 0; }
 }
