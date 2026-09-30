@@ -307,8 +307,12 @@ export class BarModelEditor {
         this.selectedId = hit.obj.id;
         this.drag = { mode: "move", obj: hit.obj, startX: x, startY: y, orig: JSON.parse(JSON.stringify(hit.obj)) };
       } else {
+        // Touching empty space with the select tool pans the workspace
+        // (a drag that goes nowhere still just deselects, as before) —
+        // this is how a finger scrolls the canvas, since single-finger
+        // drag on a create tool is reserved for drawing.
         this.selectedId = null;
-        this.drag = null;
+        this.drag = { mode: "pan", startClientY: e.clientY, startScrollTop: this.wrap.scrollTop };
       }
     } else if (this.tool === "bar") {
       this.drag = { mode: "create-bar", startX: x, startY: y, obj: null };
@@ -343,6 +347,12 @@ export class BarModelEditor {
     }
 
     if (!this.drag) return;
+
+    if (this.drag.mode === "pan") {
+      this.wrap.scrollTop = this.drag.startScrollTop - (e.clientY - this.drag.startClientY);
+      return;
+    }
+
     const { x, y } = this._toWorld(e.clientX, e.clientY);
 
     if (this.drag.mode === "create-bar") {

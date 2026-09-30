@@ -6,12 +6,28 @@ const canvas = document.getElementById("canvas");
 const wrap = document.querySelector(".canvas-wrap");
 const editor = new BarModelEditor(canvas, wrap);
 
-document.getElementById("btnScrollUp").addEventListener("click", () => {
-  wrap.scrollBy({ top: -240, behavior: "smooth" });
-});
-document.getElementById("btnScrollDown").addEventListener("click", () => {
-  wrap.scrollBy({ top: 240, behavior: "smooth" });
-});
+// Press-and-hold either scroll button to keep scrolling continuously,
+// not just one fixed jump per tap.
+function bindHoldToScroll(buttonId, dir) {
+  const btn = document.getElementById(buttonId);
+  let timer = null;
+  const start = (e) => {
+    e.preventDefault();
+    if (timer) return;
+    wrap.scrollBy({ top: dir * 12, behavior: "instant" });
+    timer = setInterval(() => wrap.scrollBy({ top: dir * 12, behavior: "instant" }), 16);
+  };
+  const stop = () => {
+    clearInterval(timer);
+    timer = null;
+  };
+  btn.addEventListener("pointerdown", start);
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointerleave", stop);
+  btn.addEventListener("pointercancel", stop);
+}
+bindHoldToScroll("btnScrollUp", -1);
+bindHoldToScroll("btnScrollDown", 1);
 
 document.getElementById("btnAddStep").addEventListener("click", () => {
   editor.addStep();
