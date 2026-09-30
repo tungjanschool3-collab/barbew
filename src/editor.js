@@ -162,7 +162,16 @@ export class BarModelEditor {
       h: 220,
       color: "#a06cd5",
     };
-    this.objects.push(label, frame);
+    const result = {
+      id: nextId(),
+      type: "text",
+      x: 20,
+      y: startY + 16 + 220 + 34,
+      text: "จะได้ ......................... (ให้เติมเอง)",
+      fontSize: 20,
+      color: "#3a2e50",
+    };
+    this.objects.push(label, frame, result);
     this.selectedId = null;
     this._scheduleDraw();
     this._editLabelFor(label);
@@ -410,6 +419,14 @@ export class BarModelEditor {
         }
       } else if (obj.type === "bracket" || obj.type === "brace") {
         obj.w = Math.max(30, orig.w + dx);
+      } else if (obj.type === "line") {
+        if (this.drag.handle === "p1") {
+          obj.x1 = orig.x1 + dx;
+          obj.y1 = orig.y1 + dy;
+        } else if (this.drag.handle === "p2") {
+          obj.x2 = orig.x2 + dx;
+          obj.y2 = orig.y2 + dy;
+        }
       }
     }
   }
@@ -467,6 +484,8 @@ export class BarModelEditor {
           return { obj: o };
         }
       } else if (o.type === "line") {
+        if (Math.abs(px - o.x1) < tol && Math.abs(py - o.y1) < tol) return { obj: o, handle: "p1" };
+        if (Math.abs(px - o.x2) < tol && Math.abs(py - o.y2) < tol) return { obj: o, handle: "p2" };
         if (this._distToSeg(px, py, o.x1, o.y1, o.x2, o.y2) < tol) return { obj: o };
       } else if (o.type === "bracket" || o.type === "brace") {
         if (Math.abs(px - (o.x + o.w)) < tol && Math.abs(py - o.y) < tol * 2) {
