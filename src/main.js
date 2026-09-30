@@ -94,6 +94,7 @@ const fileUpload = document.getElementById("fileUpload");
 const saveStatus = document.getElementById("saveStatus");
 
 const STORAGE_KEY = "barbew.problems";
+const DRAWINGS_KEY = "barbew.drawings";
 
 const DEFAULT_PROBLEMS = [
   "แม่ซื้อส้มหนัก 3.25 กิโลกรัม และซื้อแอปเปิ้ลเพิ่มอีก 1.6 กิโลกรัม แล้วแบ่งผลไม้ให้เพื่อนบ้านไป 2.15 กิโลกรัม แม่จะเหลือผลไม้ทั้งหมดกี่กิโลกรัม",
@@ -127,8 +128,33 @@ function persistProblems() {
   }
 }
 
+function loadSavedDrawings() {
+  try {
+    const raw = localStorage.getItem(DRAWINGS_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistDrawings() {
+  try {
+    localStorage.setItem(DRAWINGS_KEY, JSON.stringify(drawings));
+  } catch {
+    // storage unavailable (private browsing, quota) — save silently fails
+  }
+}
+
 let problems = loadSavedProblems() || DEFAULT_PROBLEMS.slice();
+let drawings = loadSavedDrawings();
 let currentIndex = 0;
+
+// Snapshot whatever is currently on the canvas into the drawing slot for
+// the problem we're about to navigate away from.
+function saveCurrentDrawing() {
+  drawings[currentIndex] = editor.getObjects();
+}
 
 fontSizeRange.addEventListener("input", () => {
   problemText.style.fontSize = fontSizeRange.value + "px";
@@ -142,6 +168,7 @@ problemText.addEventListener("input", () => {
 function renderProblem() {
   problemText.value = problems[currentIndex] || "";
   problemIndexLabel.textContent = `ข้อที่ ${currentIndex + 1}/${problems.length}`;
+  editor.loadObjects(drawings[currentIndex] || []);
 }
 
 function flashSaveStatus(msg) {
@@ -152,16 +179,20 @@ function flashSaveStatus(msg) {
 }
 
 document.getElementById("btnPrevProblem").addEventListener("click", () => {
+  saveCurrentDrawing();
   currentIndex = (currentIndex - 1 + problems.length) % problems.length;
   renderProblem();
 });
 document.getElementById("btnNextProblem").addEventListener("click", () => {
+  saveCurrentDrawing();
   currentIndex = (currentIndex + 1) % problems.length;
   renderProblem();
 });
 
 document.getElementById("btnNewProblem").addEventListener("click", () => {
+  saveCurrentDrawing();
   problems.push("");
+  drawings.push([]);
   currentIndex = problems.length - 1;
   renderProblem();
   problemText.focus();
@@ -169,7 +200,9 @@ document.getElementById("btnNewProblem").addEventListener("click", () => {
 
 document.getElementById("btnSaveProblem").addEventListener("click", () => {
   problems[currentIndex] = problemText.value;
+  saveCurrentDrawing();
   persistProblems();
+  persistDrawings();
   flashSaveStatus("✅ บันทึกแล้ว");
 });
 
@@ -187,12 +220,19 @@ fileUpload.addEventListener("change", async (e) => {
   }
   if (allProblems.length) {
     problems = allProblems;
+    drawings = allProblems.map(() => []);
     currentIndex = 0;
     persistProblems();
+    persistDrawings();
     renderProblem();
     flashSaveStatus("✅ นำเข้าและบันทึกแล้ว");
   }
   fileUpload.value = "";
+});
+
+window.addEventListener("beforeunload", () => {
+  saveCurrentDrawing();
+  persistDrawings();
 });
 
 renderProblem();

@@ -71,6 +71,19 @@ export class BarModelEditor {
     this._scheduleDraw();
   }
 
+  getObjects() {
+    return JSON.parse(JSON.stringify(this.objects));
+  }
+
+  loadObjects(objs) {
+    this.objects = Array.isArray(objs) ? JSON.parse(JSON.stringify(objs)) : [];
+    // Keep future nextId() calls from colliding with ids restored here.
+    for (const o of this.objects) if (o.id >= uid) uid = o.id + 1;
+    this.selectedId = null;
+    this.history = [];
+    this._scheduleDraw();
+  }
+
   undo() {
     const prev = this.history.pop();
     if (prev) {
