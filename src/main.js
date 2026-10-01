@@ -57,9 +57,42 @@ if ("requestIdleCallback" in window) {
   setTimeout(startLogo3D, 300);
 }
 
+// Typing a math symbol character directly into a label/text box that's
+// currently open should just insert it there, instead of stamping a
+// separate standalone symbol object onto the canvas.
+function insertAtCursor(el, text) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+  const node = document.createTextNode(text);
+  range.insertNode(node);
+  range.setStartAfter(node);
+  range.setEndAfter(node);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 const toolButtons = document.querySelectorAll(".tool-btn[data-tool]");
 toolButtons.forEach((btn) => {
+  if (btn.dataset.symbol) {
+    // Keep whatever inline editor is currently focused from losing focus
+    // when this button is pressed, so we can insert into it instead.
+    btn.addEventListener("mousedown", (e) => {
+      if (document.activeElement && document.activeElement.classList.contains("text-edit-box")) {
+        e.preventDefault();
+      }
+    });
+  }
   btn.addEventListener("click", () => {
+    if (
+      btn.dataset.symbol &&
+      document.activeElement &&
+      document.activeElement.classList.contains("text-edit-box")
+    ) {
+      insertAtCursor(document.activeElement, btn.dataset.symbol);
+      return;
+    }
     toolButtons.forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
     editor.setTool(btn.dataset.tool);

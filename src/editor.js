@@ -321,17 +321,21 @@ export class BarModelEditor {
     } else if (["bar", "line", "dashed", "bracket", "brace"].includes(this.tool)) {
       const hit = this._hitTest(x, y);
       this.drag = null;
-      if (hit && !hit.handle) {
-        // Long-press an existing shape to move it immediately, without
-        // switching to the select tool first. Dragging right away still
-        // draws normally (see the movement check in _onMove), so the
+      const base = { pointerId: e.pointerId, startX: x, startY: y, startClientY: e.clientY, shiftKey: e.shiftKey };
+      if (hit && hit.handle) {
+        // Long-press a resize handle to resize that shape immediately,
+        // without switching to the select tool first.
+        this._pendingGesture = {
+          ...base,
+          timer: setTimeout(() => this._resolvePendingGesture("resize", hit.obj, hit.handle), 380),
+        };
+      } else if (hit) {
+        // Long-press an existing shape's body to move it immediately,
+        // without switching to the select tool first. Dragging right away
+        // still draws normally (see the movement check in _onMove), so the
         // tool's usual gesture is unaffected.
         this._pendingGesture = {
-          pointerId: e.pointerId,
-          startX: x,
-          startY: y,
-          startClientY: e.clientY,
-          shiftKey: e.shiftKey,
+          ...base,
           timer: setTimeout(() => this._resolvePendingGesture("move", hit.obj), 380),
         };
       } else {
@@ -340,11 +344,7 @@ export class BarModelEditor {
         // scrolls the workspace instead — so every tool can pan, not just
         // "select".
         this._pendingGesture = {
-          pointerId: e.pointerId,
-          startX: x,
-          startY: y,
-          startClientY: e.clientY,
-          shiftKey: e.shiftKey,
+          ...base,
           timer: setTimeout(() => this._resolvePendingGesture("pan"), 220),
         };
       }
@@ -372,7 +372,7 @@ export class BarModelEditor {
 
   // A hold-still gesture on empty space (or on an existing shape) resolves
   // here once its timer elapses, into either a pan or a move.
-  _resolvePendingGesture(kind, obj) {
+  _resolvePendingGesture(kind, obj, handle) {
     const g = this._pendingGesture;
     if (!g) return;
     this._pendingGesture = null;
@@ -380,6 +380,10 @@ export class BarModelEditor {
       this._pushHistory();
       this.selectedId = obj.id;
       this.drag = { mode: "move", obj, startX: g.startX, startY: g.startY, orig: JSON.parse(JSON.stringify(obj)) };
+    } else if (kind === "resize") {
+      this._pushHistory();
+      this.selectedId = obj.id;
+      this.drag = { mode: "resize", handle, obj, startX: g.startX, startY: g.startY, orig: { ...obj } };
     } else {
       this.drag = { mode: "pan", startClientY: g.startClientY, startScrollTop: window.scrollY };
     }
