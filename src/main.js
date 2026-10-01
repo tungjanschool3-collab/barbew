@@ -160,9 +160,7 @@ const fontSizeRange = document.getElementById("fontSizeRange");
 const problemIndexLabel = document.getElementById("problemIndex");
 const fileUpload = document.getElementById("fileUpload");
 const saveStatus = document.getElementById("saveStatus");
-const studentAnswerInput = document.getElementById("studentAnswerInput");
 const correctAnswerInput = document.getElementById("correctAnswerInput");
-const answerFeedback = document.getElementById("answerFeedback");
 
 const STORAGE_KEY = "barbew.problems";
 const DRAWINGS_KEY = "barbew.drawings";
@@ -277,9 +275,6 @@ function renderProblem() {
   problemIndexLabel.textContent = `ข้อที่ ${currentIndex + 1}/${problems.length}`;
   editor.loadObjects(drawings[currentIndex] || []);
   correctAnswerInput.value = answers[currentIndex] || "";
-  studentAnswerInput.value = "";
-  answerFeedback.textContent = "";
-  answerFeedback.className = "answer-feedback";
 }
 
 function flashSaveStatus(msg) {
@@ -354,40 +349,6 @@ window.addEventListener("beforeunload", () => {
   saveCurrentAnswer();
   persistDrawings();
   persistAnswers();
-});
-
-document.getElementById("btnCheckAnswer").addEventListener("click", () => {
-  const extractNumbers = (s) => {
-    const m = (s || "").match(/-?\d+(\.\d+)?/g);
-    return m ? m.map(Number) : [];
-  };
-  const correctNums = extractNumbers(correctAnswerInput.value);
-  const studentNums = extractNumbers(studentAnswerInput.value);
-
-  if (!correctNums.length) {
-    answerFeedback.textContent = "⚠️ ครูยังไม่ได้ตั้งเฉลยข้อนี้";
-    answerFeedback.className = "answer-feedback neutral";
-    return;
-  }
-  if (!studentNums.length) {
-    answerFeedback.textContent = "พิมพ์คำตอบก่อนนะ";
-    answerFeedback.className = "answer-feedback neutral";
-    return;
-  }
-
-  const correctVal = correctNums[correctNums.length - 1];
-  const studentVal = studentNums[studentNums.length - 1];
-  const isCorrect = Math.abs(correctVal - studentVal) < 0.005;
-
-  answerFeedback.textContent = isCorrect ? "✅ ถูกต้อง!" : "❌ ยังไม่ถูก ลองอีกครั้ง";
-  answerFeedback.className = "answer-feedback " + (isCorrect ? "correct" : "wrong");
-});
-
-studentAnswerInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault();
-    document.getElementById("btnCheckAnswer").click();
-  }
 });
 
 renderProblem();

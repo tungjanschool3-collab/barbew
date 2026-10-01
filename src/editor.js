@@ -785,7 +785,7 @@ export class BarModelEditor {
       }
       if (o.label) {
         ctx.fillStyle = "#fff";
-        ctx.font = "bold 20px Kanit, sans-serif";
+        ctx.font = "bold 28px Kanit, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(o.label, o.x + o.w / 2, o.y + o.h / 2);

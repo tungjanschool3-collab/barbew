@@ -207,19 +207,9 @@ body.compact-header .problem-panel {
 }
 .teacher-answer { border-color: var(--purple); width: 150px; }
 
-.check-btn { background: var(--green); }
 .print-btn { background: var(--ink); }
 
 .print-sheet-header { display: none; }
-
-.answer-feedback {
-  font-weight: 800;
-  font-size: 15px;
-  min-width: 90px;
-}
-.answer-feedback.correct { color: #2e9e4f; }
-.answer-feedback.wrong { color: #e0435a; }
-.answer-feedback.neutral { color: var(--purple); }
 
 /* Toolbar */
 .toolbar {
@@ -607,18 +597,8 @@ body.compact-header .problem-panel {
   .scratchpad { bottom: 10px; left: 10px; width: calc(100vw - 20px); }
   .calculator { right: 10px; bottom: 10px; width: 210px; }
 
-  /* Fit "คำตอบของนักเรียน" + ตรวจคำตอบ + เฉลย all on one scrollable
-     row on phones, instead of each wrapping onto its own line. */
-  .answer-row {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
   .answer-field { flex: none; white-space: nowrap; }
   .answer-input { width: 130px; flex: none; }
-  .check-btn { flex: none; white-space: nowrap; }
-  .answer-feedback { flex: none; white-space: nowrap; }
-  .teacher-field { margin-left: 12px; }
 
   /* A 5-row wrapped toolbar left almost no vertical room for the
      drawing canvas on phones. Collapse it to one horizontally
