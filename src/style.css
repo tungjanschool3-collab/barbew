@@ -16,18 +16,24 @@
 
 * { box-sizing: border-box; }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   background: linear-gradient(180deg, #fff6e9 0%, #fef1f8 100%);
   color: var(--ink);
-  height: 100%;
 }
 
 body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* The whole page scrolls as one document now (header and problem
+     panel scroll away like normal page content); only the toolbar
+     stays stuck to the top as you scroll past them. */
 }
 
 /* Collapse toggle — hides the header + problem panel to free up room
@@ -295,10 +301,10 @@ body.compact-header .problem-panel {
 /* Canvas */
 .canvas-wrap {
   flex: 1;
+  min-height: 60vh;
   position: relative;
   overflow-x: hidden;
-  overflow-y: auto;
-  scroll-behavior: smooth;
+  overflow-y: visible;
   background:
     repeating-linear-gradient(0deg, #ffffff 0 39px, #f1f1fb 39px 40px),
     repeating-linear-gradient(90deg, #ffffff 0 39px, #f1f1fb 39px 40px);
@@ -559,5 +565,5 @@ body.compact-header .problem-panel {
 
   /* Guarantee the canvas is always visible with real height, even if
      everything above it runs tall on a short phone screen. */
-  .canvas-wrap { min-height: 45vh; flex: 1 1 45vh; }
+  .canvas-wrap { min-height: 45vh; }
 }

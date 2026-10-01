@@ -14,8 +14,8 @@ function bindHoldToScroll(buttonId, dir) {
   const start = (e) => {
     e.preventDefault();
     if (timer) return;
-    wrap.scrollBy({ top: dir * 12, behavior: "instant" });
-    timer = setInterval(() => wrap.scrollBy({ top: dir * 12, behavior: "instant" }), 16);
+    window.scrollBy({ top: dir * 12, behavior: "instant" });
+    timer = setInterval(() => window.scrollBy({ top: dir * 12, behavior: "instant" }), 16);
   };
   const stop = () => {
     clearInterval(timer);
@@ -40,7 +40,10 @@ document.getElementById("btnToggleHeader").addEventListener("click", (e) => {
 
 document.getElementById("btnAddStep").addEventListener("click", () => {
   editor.addStep();
-  setTimeout(() => wrap.scrollTo({ top: wrap.scrollHeight, behavior: "smooth" }), 60);
+  setTimeout(
+    () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }),
+    60
+  );
 });
 
 // ---- 3D logo ----

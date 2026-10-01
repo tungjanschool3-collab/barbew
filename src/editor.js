@@ -229,9 +229,12 @@ export class BarModelEditor {
   // and toolbar sit outside this scroll area and stay visible) instead of
   // being capped to one screenful.
   _computeWorldHeight() {
-    const wrapH = this.wrap.clientHeight;
+    // A fixed viewport-relative floor (not the wrap's own rendered height,
+    // which the canvas itself now partly determines — using that would be
+    // circular and could never shrink back down after deleting content).
+    const floor = window.innerHeight * 0.6;
     const contentBottomPx = this._contentBottomWorld() * this.scale + 200;
-    return Math.max(wrapH, contentBottomPx);
+    return Math.max(floor, contentBottomPx);
   }
 
   _applyCanvasSize(heightPx) {
@@ -313,7 +316,7 @@ export class BarModelEditor {
         // this is how a finger scrolls the canvas, since single-finger
         // drag on a create tool is reserved for drawing.
         this.selectedId = null;
-        this.drag = { mode: "pan", startClientY: e.clientY, startScrollTop: this.wrap.scrollTop };
+        this.drag = { mode: "pan", startClientY: e.clientY, startScrollTop: window.scrollY };
       }
     } else if (["bar", "line", "dashed", "bracket", "brace"].includes(this.tool)) {
       const hit = this._hitTest(x, y);
@@ -378,7 +381,7 @@ export class BarModelEditor {
       this.selectedId = obj.id;
       this.drag = { mode: "move", obj, startX: g.startX, startY: g.startY, orig: JSON.parse(JSON.stringify(obj)) };
     } else {
-      this.drag = { mode: "pan", startClientY: g.startClientY, startScrollTop: this.wrap.scrollTop };
+      this.drag = { mode: "pan", startClientY: g.startClientY, startScrollTop: window.scrollY };
     }
     this._scheduleDraw();
   }
@@ -412,7 +415,7 @@ export class BarModelEditor {
     if (!this.drag) return;
 
     if (this.drag.mode === "pan") {
-      this.wrap.scrollTop = this.drag.startScrollTop - (e.clientY - this.drag.startClientY);
+      window.scrollTo(window.scrollX, this.drag.startScrollTop - (e.clientY - this.drag.startClientY));
       return;
     }
 
