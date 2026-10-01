@@ -30,6 +30,31 @@ body {
   min-height: 100vh;
 }
 
+/* Collapse toggle — hides the header + problem panel to free up room
+   for drawing, mostly useful on short phone screens. Stays fixed so
+   it's still reachable even while those sections are hidden. */
+.toggle-header-btn {
+  position: fixed;
+  top: 6px;
+  right: 6px;
+  z-index: 50;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  color: var(--purple);
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+body.compact-header .app-header,
+body.compact-header .problem-panel {
+  display: none;
+}
+
 /* Header */
 .app-header {
   display: flex;

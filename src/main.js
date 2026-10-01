@@ -29,6 +29,15 @@ function bindHoldToScroll(buttonId, dir) {
 bindHoldToScroll("btnScrollUp", -1);
 bindHoldToScroll("btnScrollDown", 1);
 
+// Collapse the header + problem panel to free up room for drawing.
+document.getElementById("btnToggleHeader").addEventListener("click", (e) => {
+  const collapsed = document.body.classList.toggle("compact-header");
+  e.currentTarget.textContent = collapsed ? "▼" : "▲";
+  e.currentTarget.title = collapsed ? "แสดงหัวข้อและโจทย์" : "ซ่อนหัวข้อและโจทย์";
+  // The canvas now has more (or less) room — resize it to match.
+  window.dispatchEvent(new Event("resize"));
+});
+
 document.getElementById("btnAddStep").addEventListener("click", () => {
   editor.addStep();
   setTimeout(() => wrap.scrollTo({ top: wrap.scrollHeight, behavior: "smooth" }), 60);
