@@ -174,39 +174,6 @@ body.compact-header .problem-panel {
 }
 .problem-text:focus { outline: 3px solid var(--pink); }
 
-.answer-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.answer-field {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.answer-input {
-  border: 2px solid var(--blue);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 15px;
-  font-family: inherit;
-  width: 190px;
-}
-.answer-input:focus { outline: 2px solid var(--pink); }
-
-.teacher-field {
-  margin-left: auto;
-  opacity: 0.85;
-}
-.teacher-answer { border-color: var(--purple); width: 150px; }
-
 .print-btn { background: var(--ink); }
 
 .print-sheet-header { display: none; }
@@ -312,9 +279,7 @@ body.compact-header .problem-panel {
   position: relative;
   overflow-x: hidden;
   overflow-y: visible;
-  background:
-    repeating-linear-gradient(0deg, #ffffff 0 39px, #f1f1fb 39px 40px),
-    repeating-linear-gradient(90deg, #ffffff 0 39px, #f1f1fb 39px 40px);
+  background: #ffffff;
   /* Block single/two-finger panning (so one-finger drawing never
      scrolls the page) but still let iPad/iOS handle its native
      two-finger pinch-zoom of the whole screen. Vertical scrolling
@@ -597,9 +562,6 @@ body.compact-header .problem-panel {
   .scratchpad { bottom: 10px; left: 10px; width: calc(100vw - 20px); }
   .calculator { right: 10px; bottom: 10px; width: 210px; }
 
-  .answer-field { flex: none; white-space: nowrap; }
-  .answer-input { width: 130px; flex: none; }
-
   /* A 5-row wrapped toolbar left almost no vertical room for the
      drawing canvas on phones. Collapse it to one horizontally
      scrollable row instead, so the canvas always has real height. */
@@ -680,7 +642,6 @@ body.compact-header .problem-panel {
   .toggle-header-btn,
   .app-header,
   .problem-panel-row,
-  .answer-row,
   .problem-text,
   .toolbar,
   .scroll-btns,

@@ -1,4 +1,6 @@
-// BarModel canvas editor — bars, lines, brackets, braces, text, scissors-cut, copy/paste, undo.
+// BarModel canvas editor — bars, lines, brackets, braces, text, equal divisions, copy/paste, undo.
+
+const GRID_CM = 40;
 
 const PALETTE = ["#ff6b9d", "#ffa94d", "#ffd93d", "#6bcb77", "#4d96ff", "#a06cd5"];
 let uid = 1;
@@ -16,6 +18,7 @@ export class BarModelEditor {
     this.color = "#ff6b9d";
     this.pendingSymbol = "+";
     this.scale = 1;
+    this.resizeFeedback = null;
     this.history = [];
     this.drag = null; // { mode, obj, startX, startY, orig }
     this.pointers = new Map();
@@ -372,7 +375,7 @@ export class BarModelEditor {
       this._placeSymbol(x, y);
       this.drag = null;
     } else if (this.tool === "scissors") {
-      this._cutAt(x, y);
+      this._divideAt(x, y);
       this.drag = null;
     }
   }
@@ -499,6 +502,14 @@ export class BarModelEditor {
         const MIN = 20;
         obj.w = Math.max(MIN, orig.w + dx);
         obj.h = Math.max(MIN, orig.h + dy);
+        if (obj.type === "bar") {
+          this.resizeFeedback = {
+            x: obj.x + obj.w,
+            y: obj.y + obj.h,
+            dw: (obj.w - orig.w) / GRID_CM,
+            dh: (obj.h - orig.h) / GRID_CM,
+          };
+        }
       } else if (obj.type === "bracket" || obj.type === "brace") {
         obj.w = Math.max(30, orig.w + dx);
       } else if (obj.type === "line") {
@@ -522,7 +533,10 @@ export class BarModelEditor {
       this._pendingGesture = null;
     }
 
-    if (!this.drag) return;
+    if (!this.drag) {
+      this.resizeFeedback = null;
+      return;
+    }
     const d = this.drag;
 
     if (d.mode === "create-bar" && d.preview && d.preview.w > 6 && d.preview.h > 6) {
@@ -546,6 +560,7 @@ export class BarModelEditor {
     }
 
     this.drag = null;
+    this.resizeFeedback = null;
   }
 
   _onDblClick(e) {
@@ -725,22 +740,13 @@ export class BarModelEditor {
     document.addEventListener("mousedown", onOutsideClick, true);
   }
 
-  _cutAt(px, py) {
+  _divideAt(px, py) {
     const hit = this._hitTest(px, py);
     if (!hit || hit.obj.type !== "bar") return;
     const bar = hit.obj;
-    const splitX = Math.max(bar.x + 6, Math.min(bar.x + bar.w - 6, px));
-    const gap = 6;
-    const leftW = splitX - bar.x - gap / 2;
-    const rightW = bar.x + bar.w - splitX - gap / 2;
-    if (leftW < 8 || rightW < 8) return;
-
     this._pushHistory();
-    this.objects = this.objects.filter((o) => o.id !== bar.id);
-    const left = { id: nextId(), type: "bar", x: bar.x, y: bar.y, w: leftW, h: bar.h, color: bar.color, label: "" };
-    const right = { id: nextId(), type: "bar", x: splitX + gap / 2, y: bar.y, w: rightW, h: bar.h, color: bar.color, label: "" };
-    this.objects.push(left, right);
-    this.selectedId = right.id;
+    bar.divisions = Math.min(20, (bar.divisions || 1) + 1);
+    this.selectedId = bar.id;
   }
 
   // ---------- render ----------
@@ -757,9 +763,13 @@ export class BarModelEditor {
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.scale(this.scale, this.scale);
 
+    this._drawGrid();
+
     for (const o of this.objects) this._drawObject(o, o.id === this.selectedId);
 
     if (this.drag && this.drag.preview) this._drawObject(this.drag.preview, false, true);
+
+    if (this.resizeFeedback) this._drawResizeFeedback();
 
     ctx.restore();
   }
@@ -781,6 +791,20 @@ export class BarModelEditor {
       ctx.shadowColor = "transparent";
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
+      if (o.divisions > 1) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(45,49,66,0.9)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([7, 6]);
+        for (let i = 1; i < o.divisions; i++) {
+          const x = o.x + (o.w * i) / o.divisions;
+          ctx.beginPath();
+          ctx.moveTo(x, o.y + 3);
+          ctx.lineTo(x, o.y + o.h - 3);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
       if (selected) {
         // Idle, the bar has no outline at all (plain filled shape); while
         // selected it gets a dashed marquee so it's obvious it can be
@@ -854,6 +878,43 @@ export class BarModelEditor {
         ctx.setLineDash([]);
       }
     }
+    ctx.restore();
+  }
+
+  _drawGrid() {
+    const ctx = this.ctx;
+    const width = this.canvas.clientWidth / this.scale;
+    const height = this.canvas.clientHeight / this.scale;
+    ctx.save();
+    ctx.lineWidth = 1 / this.scale;
+    for (let x = 0; x <= width; x += GRID_CM / 2) {
+      ctx.strokeStyle = x % GRID_CM === 0 ? "#cad5ee" : "#e8edf8";
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+    }
+    for (let y = 0; y <= height; y += GRID_CM / 2) {
+      ctx.strokeStyle = y % GRID_CM === 0 ? "#cad5ee" : "#e8edf8";
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  _drawResizeFeedback() {
+    const { x, y, dw, dh } = this.resizeFeedback;
+    const fmt = (n) => `${n >= 0 ? "+" : ""}${n.toFixed(1)} ซม.`;
+    const text = `กว้าง ${fmt(dw)}  สูง ${fmt(dh)}`;
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.font = "bold 15px Kanit, sans-serif";
+    const w = ctx.measureText(text).width + 20;
+    const bx = Math.max(6, x - w / 2);
+    const by = Math.max(6, y + 14);
+    ctx.fillStyle = "rgba(45,49,66,0.92)";
+    roundRect(ctx, bx, by, w, 34, 9);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, bx + w / 2, by + 17);
     ctx.restore();
   }
 }
