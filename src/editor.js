@@ -339,10 +339,12 @@ export class BarModelEditor {
           timer: setTimeout(() => this._resolvePendingGesture("move", hit.obj), 380),
         };
       } else {
-        // Empty space: a quick drag still draws (handled in _onMove once
-        // it moves past the tolerance), but holding still briefly first
-        // scrolls the workspace instead — so every tool can pan, not just
-        // "select".
+        // Empty space: a single tap here deselects whatever was selected
+        // (back to its plain, idle look), same as the select tool. A quick
+        // drag still draws (handled in _onMove once it moves past the
+        // tolerance), but holding still briefly first scrolls the
+        // workspace instead — so every tool can pan, not just "select".
+        this.selectedId = null;
         this._pendingGesture = {
           ...base,
           timer: setTimeout(() => this._resolvePendingGesture("pan"), 220),
@@ -556,7 +558,17 @@ export class BarModelEditor {
     const tol = 8 / this.scale;
     for (let i = this.objects.length - 1; i >= 0; i--) {
       const o = this.objects[i];
-      if (o.type === "bar" || o.type === "frame") {
+      if (o.type === "bar") {
+        // Only the bottom-right corner is a resize handle (matches the one
+        // handle drawn when selected); the rest of the body just moves it.
+        const hTol = tol * 1.6;
+        if (Math.abs(px - (o.x + o.w)) < hTol && Math.abs(py - (o.y + o.h)) < hTol) {
+          return { obj: o, handle: "se" };
+        }
+        if (px >= o.x && px <= o.x + o.w && py >= o.y && py <= o.y + o.h) {
+          return { obj: o };
+        }
+      } else if (o.type === "frame") {
         const corners = [
           { hx: o.x, hy: o.y, handle: "nw" },
           { hx: o.x + o.w, hy: o.y, handle: "ne" },
@@ -726,12 +738,28 @@ export class BarModelEditor {
     if (ghost) ctx.globalAlpha = 0.6;
 
     if (o.type === "bar") {
+      if (!ghost) {
+        ctx.shadowColor = "rgba(0,0,0,0.18)";
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetY = 3;
+      }
       ctx.fillStyle = o.color;
-      ctx.strokeStyle = selected ? "#333" : "rgba(0,0,0,0.35)";
-      ctx.lineWidth = selected ? 3 : 2;
       roundRect(ctx, o.x, o.y, o.w, o.h, 8);
       ctx.fill();
-      ctx.stroke();
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      if (selected) {
+        // Idle, the bar has no outline at all (plain filled shape); while
+        // selected it gets a dashed marquee so it's obvious it can be
+        // moved or resized.
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 5]);
+        roundRect(ctx, o.x - 3, o.y - 3, o.w + 6, o.h + 6, 10);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
       if (o.label) {
         ctx.fillStyle = "#fff";
         ctx.font = "bold 20px Kanit, sans-serif";
@@ -739,12 +767,7 @@ export class BarModelEditor {
         ctx.textBaseline = "middle";
         ctx.fillText(o.label, o.x + o.w / 2, o.y + o.h / 2);
       }
-      if (selected) {
-        drawHandle(ctx, o.x, o.y);
-        drawHandle(ctx, o.x + o.w, o.y);
-        drawHandle(ctx, o.x, o.y + o.h);
-        drawHandle(ctx, o.x + o.w, o.y + o.h);
-      }
+      if (selected) drawResizeHandle(ctx, o.x + o.w, o.y + o.h);
     } else if (o.type === "line") {
       ctx.strokeStyle = o.color;
       ctx.lineWidth = 3;
@@ -824,6 +847,19 @@ function drawHandle(ctx, x, y) {
   ctx.beginPath();
   ctx.arc(x, y, 5, 0, Math.PI * 2);
   ctx.fill();
+}
+
+// The single corner handle shown on a selected bar — bigger than the plain
+// dot handles so it's an easy touch target, with a light ring so it reads
+// clearly against any bar color.
+function drawResizeHandle(ctx, x, y) {
+  ctx.beginPath();
+  ctx.arc(x, y, 9, 0, Math.PI * 2);
+  ctx.fillStyle = "#2d3748";
+  ctx.fill();
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = "#fff";
+  ctx.stroke();
 }
 
 function drawSpanLabel(ctx, o, extra = 20) {
