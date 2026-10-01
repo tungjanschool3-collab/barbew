@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/tungjanschool3-collab/barbew#readme",
   "dependencies": {
+    "pdf-lib": "^1.17.1",
     "three": "^0.186.1"
   },
   "devDependencies": {

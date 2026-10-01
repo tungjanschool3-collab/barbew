@@ -1,5 +1,6 @@
 import { BarModelEditor } from "./editor.js";
 import { ScratchPad } from "./scratchpad.js";
+import { PDFDocument } from "pdf-lib";
 
 // ---- editor ----
 const canvas = document.getElementById("canvas");
@@ -458,3 +459,114 @@ function preparePrintSheet() {
 window.addEventListener("beforeprint", preparePrintSheet);
 window.addEventListener("afterprint", () => editor.setPrintMode(false));
 document.getElementById("btnPrintPdf").addEventListener("click", () => window.print());
+
+// ---- save image / create PDF / append to an existing PDF ----
+const existingPdfInput = document.getElementById("existingPdfInput");
+
+function safeFilename(name) {
+  return name.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "-").slice(0, 60) || "barbew";
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function canvasToBlob(source, type = "image/png") {
+  return new Promise((resolve, reject) => {
+    source.toBlob((blob) => blob ? resolve(blob) : reject(new Error("สร้างไฟล์ภาพไม่สำเร็จ")), type);
+  });
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = Array.from(text || "");
+  const lines = [];
+  let line = "";
+  for (const char of words) {
+    const next = line + char;
+    if (line && ctx.measureText(next).width > maxWidth) {
+      lines.push(line.trim());
+      line = char;
+    } else {
+      line = next;
+    }
+  }
+  if (line.trim()) lines.push(line.trim());
+  return lines;
+}
+
+function createWorksheetCanvas() {
+  const drawing = editor.createExportCanvas();
+  const page = document.createElement("canvas");
+  page.width = 1240;
+  page.height = 1754;
+  const ctx = page.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, page.width, page.height);
+
+  ctx.fillStyle = "#2d3142";
+  ctx.textAlign = "center";
+  ctx.font = "bold 38px Kanit, Tahoma, sans-serif";
+  ctx.fillText("แบบฝึกหัดโจทย์ปัญหา Bar Model", page.width / 2, 70);
+  ctx.font = "30px Kanit, Tahoma, sans-serif";
+  const lines = wrapCanvasText(ctx, `ข้อ ${currentIndex + 1}  ${problemText.value.trim()}`, 1100);
+  lines.slice(0, 6).forEach((line, i) => ctx.fillText(line, page.width / 2, 125 + i * 44));
+
+  const top = 155 + Math.min(lines.length, 6) * 44;
+  const maxW = 1140;
+  const maxH = page.height - top - 70;
+  const ratio = Math.min(maxW / drawing.width, maxH / drawing.height, 1);
+  const width = drawing.width * ratio;
+  const height = drawing.height * ratio;
+  ctx.drawImage(drawing, (page.width - width) / 2, top, width, height);
+  return page;
+}
+
+async function worksheetPdfBytes(existingBytes = null) {
+  const pdf = existingBytes ? await PDFDocument.load(existingBytes) : await PDFDocument.create();
+  const worksheet = createWorksheetCanvas();
+  const png = await pdf.embedPng(await canvasToBlob(worksheet).then((b) => b.arrayBuffer()));
+  const page = pdf.addPage([595.28, 841.89]);
+  const margin = 24;
+  const scale = Math.min((page.getWidth() - margin * 2) / png.width, (page.getHeight() - margin * 2) / png.height);
+  const width = png.width * scale;
+  const height = png.height * scale;
+  page.drawImage(png, {
+    x: (page.getWidth() - width) / 2,
+    y: (page.getHeight() - height) / 2,
+    width,
+    height,
+  });
+  return pdf.save();
+}
+
+document.getElementById("btnSaveImage").addEventListener("click", async () => {
+  const blob = await canvasToBlob(editor.createExportCanvas());
+  downloadBlob(blob, `${safeFilename(`barbew-ข้อ-${currentIndex + 1}`)}.png`);
+});
+
+document.getElementById("btnExportPdf").addEventListener("click", async () => {
+  const bytes = await worksheetPdfBytes();
+  downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${safeFilename(`barbew-ข้อ-${currentIndex + 1}`)}.pdf`);
+});
+
+existingPdfInput.addEventListener("change", async () => {
+  const file = existingPdfInput.files?.[0];
+  if (!file) return;
+  try {
+    const bytes = await worksheetPdfBytes(await file.arrayBuffer());
+    const base = file.name.replace(/\.pdf$/i, "");
+    downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${safeFilename(base)}-เพิ่มผลงาน.pdf`);
+  } catch (error) {
+    alert("ไม่สามารถเพิ่มผลงานลง PDF นี้ได้ กรุณาตรวจสอบว่าไฟล์ไม่เสียหายหรือมีรหัสผ่าน");
+    console.error(error);
+  } finally {
+    existingPdfInput.value = "";
+  }
+});

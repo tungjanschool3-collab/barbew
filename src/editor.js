@@ -252,6 +252,32 @@ export class BarModelEditor {
     this._scheduleDraw();
   }
 
+  // Returns a detached, white-background snapshot trimmed to the drawing
+  // content. Selection handles are hidden and the live editor is restored
+  // immediately after the copy is made.
+  createExportCanvas() {
+    const oldSelectedId = this.selectedId;
+    const oldPrintMode = this.printMode;
+    this.selectedId = null;
+    this.printMode = true;
+    this._resize();
+    this._draw();
+
+    const output = document.createElement("canvas");
+    output.width = this.canvas.width;
+    output.height = this.canvas.height;
+    const out = output.getContext("2d");
+    out.fillStyle = "#fff";
+    out.fillRect(0, 0, output.width, output.height);
+    out.drawImage(this.canvas, 0, 0);
+
+    this.selectedId = oldSelectedId;
+    this.printMode = oldPrintMode;
+    this._resize();
+    this._draw();
+    return output;
+  }
+
   _applyCanvasSize(heightPx) {
     const rect = this.wrap.getBoundingClientRect();
     this.canvas.width = rect.width * this.dpr;

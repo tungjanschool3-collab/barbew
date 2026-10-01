@@ -32,6 +32,12 @@
         <input type="file" id="fileUpload" accept=".txt" hidden multiple />
       </label>
       <button id="btnPrintPdf" class="pill-btn print-btn" title="พิมพ์เป็น PDF ขนาด A4">🖨️ พิมพ์ PDF</button>
+      <button id="btnSaveImage" class="pill-btn image-btn" title="บันทึกภาพผลงานเป็น PNG">🖼️ บันทึกภาพ</button>
+      <button id="btnExportPdf" class="pill-btn pdf-btn" title="ดาวน์โหลดผลงานเป็น PDF">📄 ส่งออก PDF</button>
+      <label class="pill-btn append-pdf-btn" title="เพิ่มผลงานเป็นหน้าท้ายของ PDF เดิม">
+        ➕ เพิ่มลง PDF เดิม
+        <input type="file" id="existingPdfInput" accept="application/pdf,.pdf" hidden />
+      </label>
       <span id="saveStatus" class="save-status"></span>
       <label class="fontsize-label">
         ขนาดตัวอักษร

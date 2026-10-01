@@ -175,6 +175,13 @@ body.compact-header .problem-panel {
 .problem-text:focus { outline: 3px solid var(--pink); }
 
 .print-btn { background: var(--ink); }
+.image-btn { background: var(--green); }
+.pdf-btn { background: #e85d75; }
+.append-pdf-btn {
+  background: var(--orange);
+  display: inline-flex;
+  align-items: center;
+}
 
 .print-sheet-header { display: none; }
 
