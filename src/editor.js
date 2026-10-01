@@ -335,21 +335,15 @@ export class BarModelEditor {
       this.drag = null;
       const base = { pointerId: e.pointerId, startX: x, startY: y, startClientY: e.clientY, shiftKey: e.shiftKey };
       if (hit && hit.handle) {
-        // Long-press a resize handle to resize that shape immediately,
-        // without switching to the select tool first.
-        this._pendingGesture = {
-          ...base,
-          timer: setTimeout(() => this._resolvePendingGesture("resize", hit.obj, hit.handle), 380),
-        };
+        // Pressing an existing shape's resize handle resizes it right away,
+        // without switching to the select tool or holding first — touching
+        // a handle is unambiguous, so there's nothing to disambiguate from.
+        this._resolvePendingGesture("resize", hit.obj, hit.handle, base);
       } else if (hit) {
-        // Long-press an existing shape's body to move it immediately,
-        // without switching to the select tool first. Dragging right away
-        // still draws normally (see the movement check in _onMove), so the
-        // tool's usual gesture is unaffected.
-        this._pendingGesture = {
-          ...base,
-          timer: setTimeout(() => this._resolvePendingGesture("move", hit.obj), 380),
-        };
+        // Pressing an existing shape's body moves it right away, same as
+        // the handle above — only empty space needs the hold-to-pan delay
+        // below, to tell "draw here" apart from "scroll the page".
+        this._resolvePendingGesture("move", hit.obj, null, base);
       } else {
         // Empty space: a single tap here deselects whatever was selected
         // (back to its plain, idle look), same as the select tool. A quick
@@ -386,8 +380,11 @@ export class BarModelEditor {
 
   // A hold-still gesture on empty space (or on an existing shape) resolves
   // here once its timer elapses, into either a pan or a move.
-  _resolvePendingGesture(kind, obj, handle) {
-    const g = this._pendingGesture;
+  // Called either immediately (move/resize, passing `base` straight from
+  // _onDown) or later once a hold-still timer fires (pan, reading the
+  // gesture info that was stashed in this._pendingGesture while waiting).
+  _resolvePendingGesture(kind, obj, handle, base) {
+    const g = base || this._pendingGesture;
     if (!g) return;
     this._pendingGesture = null;
     if (kind === "move") {
