@@ -23,7 +23,7 @@ export class BarModelEditor {
     this.pinchStartScale = 1;
     this.onZoomChange = null;
     this._worldHeightPx = 0;
-    this._pendingLongPress = null;
+    this._pendingGesture = null;
 
     this._drawScheduled = false;
     this._bindEvents();
@@ -317,33 +317,33 @@ export class BarModelEditor {
       }
     } else if (["bar", "line", "dashed", "bracket", "brace"].includes(this.tool)) {
       const hit = this._hitTest(x, y);
+      this.drag = null;
       if (hit && !hit.handle) {
         // Long-press an existing shape to move it immediately, without
         // switching to the select tool first. Dragging right away still
         // draws normally (see the movement check in _onMove), so the
         // tool's usual gesture is unaffected.
-        this.drag = null;
-        this._pendingLongPress = {
+        this._pendingGesture = {
           pointerId: e.pointerId,
           startX: x,
           startY: y,
+          startClientY: e.clientY,
           shiftKey: e.shiftKey,
-          timer: setTimeout(() => {
-            this._pushHistory();
-            this.selectedId = hit.obj.id;
-            this.drag = {
-              mode: "move",
-              obj: hit.obj,
-              startX: x,
-              startY: y,
-              orig: JSON.parse(JSON.stringify(hit.obj)),
-            };
-            this._pendingLongPress = null;
-            this._scheduleDraw();
-          }, 380),
+          timer: setTimeout(() => this._resolvePendingGesture("move", hit.obj), 380),
         };
       } else {
-        this._beginCreateDrag(x, y, e.shiftKey);
+        // Empty space: a quick drag still draws (handled in _onMove once
+        // it moves past the tolerance), but holding still briefly first
+        // scrolls the workspace instead — so every tool can pan, not just
+        // "select".
+        this._pendingGesture = {
+          pointerId: e.pointerId,
+          startX: x,
+          startY: y,
+          startClientY: e.clientY,
+          shiftKey: e.shiftKey,
+          timer: setTimeout(() => this._resolvePendingGesture("pan"), 220),
+        };
       }
     } else if (this.tool === "text") {
       this._createTextAt(x, y);
@@ -367,6 +367,22 @@ export class BarModelEditor {
     }
   }
 
+  // A hold-still gesture on empty space (or on an existing shape) resolves
+  // here once its timer elapses, into either a pan or a move.
+  _resolvePendingGesture(kind, obj) {
+    const g = this._pendingGesture;
+    if (!g) return;
+    this._pendingGesture = null;
+    if (kind === "move") {
+      this._pushHistory();
+      this.selectedId = obj.id;
+      this.drag = { mode: "move", obj, startX: g.startX, startY: g.startY, orig: JSON.parse(JSON.stringify(obj)) };
+    } else {
+      this.drag = { mode: "pan", startClientY: g.startClientY, startScrollTop: this.wrap.scrollTop };
+    }
+    this._scheduleDraw();
+  }
+
   _onMove(e) {
     if (this.pointers.has(e.pointerId)) {
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -381,14 +397,14 @@ export class BarModelEditor {
       return;
     }
 
-    if (this._pendingLongPress && this._pendingLongPress.pointerId === e.pointerId) {
+    if (this._pendingGesture && this._pendingGesture.pointerId === e.pointerId) {
       const p = this._toWorld(e.clientX, e.clientY);
-      const dx = p.x - this._pendingLongPress.startX;
-      const dy = p.y - this._pendingLongPress.startY;
+      const dx = p.x - this._pendingGesture.startX;
+      const dy = p.y - this._pendingGesture.startY;
       if (Math.hypot(dx, dy) > 6 / this.scale) {
-        clearTimeout(this._pendingLongPress.timer);
-        const { startX, startY, shiftKey } = this._pendingLongPress;
-        this._pendingLongPress = null;
+        clearTimeout(this._pendingGesture.timer);
+        const { startX, startY, shiftKey } = this._pendingGesture;
+        this._pendingGesture = null;
         this._beginCreateDrag(startX, startY, shiftKey);
       }
     }
@@ -492,9 +508,9 @@ export class BarModelEditor {
     this.pointers.delete(e.pointerId);
     if (this.pointers.size < 2) this.pinchStartDist = null;
 
-    if (this._pendingLongPress && this._pendingLongPress.pointerId === e.pointerId) {
-      clearTimeout(this._pendingLongPress.timer);
-      this._pendingLongPress = null;
+    if (this._pendingGesture && this._pendingGesture.pointerId === e.pointerId) {
+      clearTimeout(this._pendingGesture.timer);
+      this._pendingGesture = null;
     }
 
     if (!this.drag) return;
