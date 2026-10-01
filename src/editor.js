@@ -143,7 +143,7 @@ export class BarModelEditor {
     }
     const stepNum = maxN + 1;
     const bottom = this._contentBottomWorld();
-    const startY = bottom > 0 ? bottom + 50 : 20;
+    const startY = bottom > 0 ? bottom + 50 : 44;
     const frameW = Math.max(480, this.wrap.clientWidth / this.scale - 80);
 
     const label = {
@@ -488,29 +488,11 @@ export class BarModelEditor {
       const dx = x - this.drag.startX;
       const dy = y - this.drag.startY;
       if (obj.type === "bar" || obj.type === "frame") {
+        // Only the bottom-right handle is reachable (see _hitTest), so
+        // growing/shrinking always keeps the top-left corner anchored.
         const MIN = 20;
-        switch (this.drag.handle) {
-          case "se":
-            obj.w = Math.max(MIN, orig.w + dx);
-            obj.h = Math.max(MIN, orig.h + dy);
-            break;
-          case "ne":
-            obj.w = Math.max(MIN, orig.w + dx);
-            obj.h = Math.max(MIN, orig.h - dy);
-            obj.y = orig.y + orig.h - obj.h;
-            break;
-          case "sw":
-            obj.w = Math.max(MIN, orig.w - dx);
-            obj.x = orig.x + orig.w - obj.w;
-            obj.h = Math.max(MIN, orig.h + dy);
-            break;
-          case "nw":
-            obj.w = Math.max(MIN, orig.w - dx);
-            obj.x = orig.x + orig.w - obj.w;
-            obj.h = Math.max(MIN, orig.h - dy);
-            obj.y = orig.y + orig.h - obj.h;
-            break;
-        }
+        obj.w = Math.max(MIN, orig.w + dx);
+        obj.h = Math.max(MIN, orig.h + dy);
       } else if (obj.type === "bracket" || obj.type === "brace") {
         obj.w = Math.max(30, orig.w + dx);
       } else if (obj.type === "line") {
@@ -581,14 +563,14 @@ export class BarModelEditor {
           return { obj: o };
         }
       } else if (o.type === "frame") {
-        const corners = [
-          { hx: o.x, hy: o.y, handle: "nw" },
-          { hx: o.x + o.w, hy: o.y, handle: "ne" },
-          { hx: o.x, hy: o.y + o.h, handle: "sw" },
-          { hx: o.x + o.w, hy: o.y + o.h, handle: "se" },
-        ];
-        const corner = corners.find((c) => Math.abs(px - c.hx) < tol && Math.abs(py - c.hy) < tol);
-        if (corner) return { obj: o, handle: corner.handle };
+        // Only the bottom-right corner resizes it (same as a bar) — the
+        // other three corners used to be grabbable too, and missing the
+        // intended one could shrink the frame to a sliver while stretching
+        // it tall, rendering as a dense, corrupted-looking dashed mess.
+        const hTol = tol * 1.6;
+        if (Math.abs(px - (o.x + o.w)) < hTol && Math.abs(py - (o.y + o.h)) < hTol) {
+          return { obj: o, handle: "se" };
+        }
         if (px >= o.x && px <= o.x + o.w && py >= o.y && py <= o.y + o.h) {
           return { obj: o };
         }
@@ -835,12 +817,7 @@ export class BarModelEditor {
       roundRect(ctx, o.x, o.y, o.w, o.h, 12);
       ctx.stroke();
       ctx.setLineDash([]);
-      if (selected) {
-        drawHandle(ctx, o.x, o.y);
-        drawHandle(ctx, o.x + o.w, o.y);
-        drawHandle(ctx, o.x, o.y + o.h);
-        drawHandle(ctx, o.x + o.w, o.y + o.h);
-      }
+      if (selected) drawResizeHandle(ctx, o.x + o.w, o.y + o.h);
     } else if (o.type === "bracket") {
       ctx.strokeStyle = o.color;
       ctx.lineWidth = 3;
