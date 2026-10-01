@@ -318,6 +318,13 @@ export class BarModelEditor {
           startY: y,
           orig: { ...hit.obj },
         };
+      } else if (hit && hit.obj.type === "frame") {
+        // The step guide box is a fixed placement guide, not something to
+        // drag around — select it (so it can still be deleted) but don't
+        // start a move, so a stray drag over it can't shift it off its
+        // mark while the student is drawing inside it.
+        this.selectedId = hit.obj.id;
+        this.drag = null;
       } else if (hit) {
         this._pushHistory();
         this.selectedId = hit.obj.id;
@@ -339,17 +346,19 @@ export class BarModelEditor {
         // without switching to the select tool or holding first — touching
         // a handle is unambiguous, so there's nothing to disambiguate from.
         this._resolvePendingGesture("resize", hit.obj, hit.handle, base);
-      } else if (hit) {
+      } else if (hit && hit.obj.type !== "frame") {
         // Pressing an existing shape's body moves it right away, same as
         // the handle above — only empty space needs the hold-to-pan delay
         // below, to tell "draw here" apart from "scroll the page".
         this._resolvePendingGesture("move", hit.obj, null, base);
       } else {
-        // Empty space: a single tap here deselects whatever was selected
-        // (back to its plain, idle look), same as the select tool. A quick
-        // drag still draws (handled in _onMove once it moves past the
-        // tolerance), but holding still briefly first scrolls the
-        // workspace instead — so every tool can pan, not just "select".
+        // Empty space (or the step guide frame's body, which is a fixed
+        // placement guide and never drags) — a single tap here deselects
+        // whatever was selected (back to its plain, idle look), same as
+        // the select tool. A quick drag still draws right through it
+        // (handled in _onMove once it moves past the tolerance), but
+        // holding still briefly first scrolls the workspace instead — so
+        // every tool can pan, not just "select".
         this.selectedId = null;
         this._pendingGesture = {
           ...base,
