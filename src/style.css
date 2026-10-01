@@ -288,11 +288,25 @@ body.compact-header .problem-panel {
   transform: scale(1.15);
 }
 
+.zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .zoom-label {
   font-weight: 700;
   color: var(--purple);
   min-width: 46px;
   text-align: center;
+}
+
+/* Workspace: toolbar + canvas. On phones this is just a transparent
+   wrapper (display: contents) so the toolbar stays above the canvas
+   exactly as before; from tablet width up it becomes a sidebar layout
+   (see the min-width media query below). */
+.workspace {
+  display: contents;
 }
 
 .calc-btn { background: var(--purple); }
@@ -566,4 +580,62 @@ body.compact-header .problem-panel {
   /* Guarantee the canvas is always visible with real height, even if
      everything above it runs tall on a short phone screen. */
   .canvas-wrap { min-height: 45vh; }
+}
+
+/* From tablet width up, the toolbar becomes a sidebar down the left of
+   the canvas instead of a bar across the top — stays fully on screen
+   while the canvas/page scrolls, like a normal drawing-app tool panel. */
+@media (min-width: 641px) {
+  .workspace {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    width: 180px;
+    flex: none;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100vh;
+    overflow-y: auto;
+    border-bottom: none;
+    border-right: 2px solid #ffd6e8;
+  }
+
+  .toolbar .tool-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    width: 100%;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .toolbar .tool-btn span {
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .toolbar .tool-sep {
+    width: auto;
+    height: 2px;
+    margin: 4px 0;
+  }
+
+  .toolbar .color-palette {
+    max-width: none;
+  }
+
+  .toolbar .zoom-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    min-width: 0;
+  }
 }

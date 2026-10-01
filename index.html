@@ -53,38 +53,42 @@
     </div>
   </section>
 
-  <section class="toolbar" id="toolbar">
-    <button class="tool-btn" data-tool="select" title="เลือก/ย้าย">🖐️<span>เลือก</span></button>
-    <button class="tool-btn" data-tool="bar" title="สร้างบาร์">🟩<span>สร้างบาร์</span></button>
-    <button class="tool-btn" data-tool="line" title="เส้นตรง">📏<span>เส้นตรง</span></button>
-    <button class="tool-btn" data-tool="dashed" title="เส้นประ">➖<span>เส้นประ</span></button>
-    <button class="tool-btn" data-tool="bracket" title="วงเล็บ">「」<span>วงเล็บ</span></button>
-    <button class="tool-btn" data-tool="brace" title="ปีกกา">{ }<span>ปีกกา</span></button>
-    <button class="tool-btn" data-tool="text" title="พิมพ์ข้อความ / ตัวเลข">🔤<span>ข้อความ</span></button>
-    <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="+" title="เครื่องหมายบวก">+<span>บวก</span></button>
-    <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="−" title="เครื่องหมายลบ">−<span>ลบ</span></button>
-    <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="×" title="เครื่องหมายคูณ">×<span>คูณ</span></button>
-    <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="÷" title="เครื่องหมายหาร">÷<span>หาร</span></button>
-    <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="=" title="เครื่องหมายเท่ากับ">=<span>เท่ากับ</span></button>
-    <button class="tool-btn" data-tool="scissors" title="กรรไกรตัดบาร์">✂️<span>ตัดบาร์</span></button>
-    <button class="tool-btn" id="btnAddStep" title="เพิ่มขั้นตอนใหม่">🪜<span>เพิ่มขั้นตอน</span></button>
-    <button class="tool-btn" id="btnCopy" title="คัดลอก">📋<span>คัดลอก</span></button>
-    <button class="tool-btn" id="btnPaste" title="วาง">📄<span>วาง</span></button>
-    <button class="tool-btn" id="btnDelete" title="ลบ">🗑️<span>ลบ</span></button>
-    <button class="tool-btn" id="btnUndo" title="ย้อนกลับ">↩️<span>ย้อนกลับ</span></button>
-    <button class="tool-btn" id="btnClear" title="ล้างทั้งหมด">🧹<span>ล้างทั้งหมด</span></button>
-    <span class="tool-sep"></span>
-    <div class="color-palette" id="colorPalette" title="เลือกสี"></div>
-    <button class="tool-btn" id="btnZoomOut" title="ย่อ">🔍−</button>
-    <span id="zoomLabel" class="zoom-label">100%</span>
-    <button class="tool-btn" id="btnZoomIn" title="ขยาย">🔍+</button>
-    <button class="tool-btn calc-btn" id="btnCalc" title="เครื่องคิดเลข">🧮<span>คิดเลข</span></button>
-    <button class="tool-btn scratch-btn" id="btnScratch" title="กระดาษทด">📝<span>กระดาษทด</span></button>
-  </section>
+  <div class="workspace">
+    <section class="toolbar" id="toolbar">
+      <button class="tool-btn" data-tool="select" title="เลือก/ย้าย">🖐️<span>เลือก</span></button>
+      <button class="tool-btn" data-tool="bar" title="สร้างบาร์">🟩<span>สร้างบาร์</span></button>
+      <button class="tool-btn" data-tool="line" title="เส้นตรง">📏<span>เส้นตรง</span></button>
+      <button class="tool-btn" data-tool="dashed" title="เส้นประ">➖<span>เส้นประ</span></button>
+      <button class="tool-btn" data-tool="bracket" title="วงเล็บ">「」<span>วงเล็บ</span></button>
+      <button class="tool-btn" data-tool="brace" title="ปีกกา">{ }<span>ปีกกา</span></button>
+      <button class="tool-btn" data-tool="text" title="พิมพ์ข้อความ / ตัวเลข">🔤<span>ข้อความ</span></button>
+      <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="+" title="เครื่องหมายบวก">+<span>บวก</span></button>
+      <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="−" title="เครื่องหมายลบ">−<span>ลบ</span></button>
+      <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="×" title="เครื่องหมายคูณ">×<span>คูณ</span></button>
+      <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="÷" title="เครื่องหมายหาร">÷<span>หาร</span></button>
+      <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="=" title="เครื่องหมายเท่ากับ">=<span>เท่ากับ</span></button>
+      <button class="tool-btn" data-tool="scissors" title="กรรไกรตัดบาร์">✂️<span>ตัดบาร์</span></button>
+      <button class="tool-btn" id="btnAddStep" title="เพิ่มขั้นตอนใหม่">🪜<span>เพิ่มขั้นตอน</span></button>
+      <button class="tool-btn" id="btnCopy" title="คัดลอก">📋<span>คัดลอก</span></button>
+      <button class="tool-btn" id="btnPaste" title="วาง">📄<span>วาง</span></button>
+      <button class="tool-btn" id="btnDelete" title="ลบ">🗑️<span>ลบ</span></button>
+      <button class="tool-btn" id="btnUndo" title="ย้อนกลับ">↩️<span>ย้อนกลับ</span></button>
+      <button class="tool-btn" id="btnClear" title="ล้างทั้งหมด">🧹<span>ล้างทั้งหมด</span></button>
+      <span class="tool-sep"></span>
+      <div class="color-palette" id="colorPalette" title="เลือกสี"></div>
+      <div class="zoom-group">
+        <button class="tool-btn" id="btnZoomOut" title="ย่อ">🔍−</button>
+        <span id="zoomLabel" class="zoom-label">100%</span>
+        <button class="tool-btn" id="btnZoomIn" title="ขยาย">🔍+</button>
+      </div>
+      <button class="tool-btn calc-btn" id="btnCalc" title="เครื่องคิดเลข">🧮<span>คิดเลข</span></button>
+      <button class="tool-btn scratch-btn" id="btnScratch" title="กระดาษทด">📝<span>กระดาษทด</span></button>
+    </section>
 
-  <main class="canvas-wrap">
-    <canvas id="canvas"></canvas>
-  </main>
+    <main class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+    </main>
+  </div>
 
   <div class="scroll-btns">
     <button id="btnScrollUp" class="scroll-btn" title="เลื่อนขึ้น">▲</button>
