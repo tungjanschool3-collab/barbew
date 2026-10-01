@@ -638,27 +638,39 @@ export class BarModelEditor {
       // bar / bracket / brace: edit their label
       const cx = obj.type === "bar" ? obj.x + obj.w / 2 : obj.x + obj.w / 2;
       const cy = obj.type === "bar" ? obj.y + obj.h / 2 : obj.y + (obj.dir || 1) * 26;
-      this._openInlineEditor({ x: cx, y: cy, existing: obj, isLabel: true, centered: true });
+      this._openInlineEditor({ x: cx, y: cy, existing: obj, isLabel: true });
     }
   }
 
-  _openInlineEditor({ x, y, existing, isLabel, centered }) {
-    const wrapRect = this.wrap.getBoundingClientRect();
-    const div = document.createElement("div");
-    div.className = "text-edit-box";
-    div.contentEditable = "true";
-    div.style.left = x * this.scale + wrapRect.left - wrapRect.left + "px";
-    div.style.top = (centered ? y - 14 : y - 20) * this.scale + "px";
-    div.style.fontSize = (isLabel ? 20 : 24) * this.scale + "px";
-    div.style.color = this.color;
-    div.textContent = existing ? (isLabel ? existing.label || "" : existing.text || "") : "";
-    this.wrap.appendChild(div);
-    div.focus();
-    placeCaretEnd(div);
+  // Shows a small centered popup card to type a number/label into, instead
+  // of a tiny floating box right on the canvas — used everywhere a bar,
+  // span, or standalone text object's text is entered or edited.
+  _openInlineEditor({ x, y, existing, isLabel }) {
+    const backdrop = document.createElement("div");
+    backdrop.className = "text-modal-backdrop";
+    const modal = document.createElement("div");
+    modal.className = "text-modal";
+    const title = document.createElement("h3");
+    title.textContent = "พิมพ์ตัวเลข / ข้อความ";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "text-edit-box";
+    input.placeholder = "เช่น 1,250,000 หรือ 3.125 หรือ รวม";
+    input.value = existing ? (isLabel ? existing.label || "" : existing.text || "") : "";
+    modal.appendChild(title);
+    modal.appendChild(input);
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
 
+    let done = false;
     const commit = () => {
-      const val = div.textContent.trim();
-      div.remove();
+      if (done) return;
+      done = true;
+      document.removeEventListener("mousedown", onOutsideClick, true);
+      const val = input.value.trim();
+      backdrop.remove();
       if (isLabel) {
         this._pushHistory();
         existing.label = val;
@@ -680,17 +692,31 @@ export class BarModelEditor {
       }
       this._scheduleDraw();
     };
+    const cancel = () => {
+      if (done) return;
+      done = true;
+      document.removeEventListener("mousedown", onOutsideClick, true);
+      backdrop.remove();
+    };
 
-    div.addEventListener("blur", commit, { once: true });
-    div.addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter" && !ev.shiftKey) {
+    input.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
         ev.preventDefault();
-        div.blur();
+        commit();
       } else if (ev.key === "Escape") {
-        div.textContent = existing ? (isLabel ? existing.label || "" : existing.text || "") : "";
-        div.blur();
+        ev.preventDefault();
+        cancel();
       }
     });
+    // Tapping anywhere outside the card saves and closes it — except the
+    // toolbar, which stays clickable while this is open so a symbol button
+    // (+, −, ×, ÷, =) types straight into the box instead of dismissing it.
+    const onOutsideClick = (ev) => {
+      if (modal.contains(ev.target)) return;
+      if (ev.target.closest && ev.target.closest(".toolbar")) return;
+      commit();
+    };
+    document.addEventListener("mousedown", onOutsideClick, true);
   }
 
   _cutAt(px, py) {
@@ -884,13 +910,4 @@ function drawBrace(ctx, x1, x2, y, h, color) {
   ctx.quadraticCurveTo(mid, y + h, mid + (x2 - mid) * 0.4, y + h);
   ctx.quadraticCurveTo(x2, y + h, x2, y);
   ctx.stroke();
-}
-
-function placeCaretEnd(el) {
-  const range = document.createRange();
-  range.selectNodeContents(el);
-  range.collapse(false);
-  const sel = window.getSelection();
-  sel.removeAllRanges();
-  sel.addRange(range);
 }

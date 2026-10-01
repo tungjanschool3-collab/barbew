@@ -521,18 +521,56 @@ body.compact-header .problem-panel {
   background: #fff6e9;
 }
 
-/* Text edit overlay */
-.text-edit-box {
-  position: absolute;
-  min-width: 24px;
-  padding: 2px 6px;
-  border: 2px dashed var(--blue);
-  background: rgba(255,255,255,0.9);
-  border-radius: 6px;
-  font-family: inherit;
-  outline: none;
-  z-index: 10;
+/* Text edit popup — shown centered over everything whenever a bar/span
+   label or standalone text object is typed in or edited. */
+.text-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(58,46,80,0.25);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  /* The dimming is purely visual — clicks pass through it so the toolbar
+     (e.g. the +, −, ×, ÷, = buttons) stays usable while this is open, to
+     type a symbol straight into the box below instead of closing it. */
+  pointer-events: none;
 }
+
+.text-modal {
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  padding: 20px 22px;
+  width: min(360px, 100%);
+  pointer-events: auto;
+}
+
+.text-modal h3 {
+  margin: 0 0 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+}
+
+.text-edit-box {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 2px solid var(--blue);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 18px;
+  font-family: inherit;
+  color: var(--ink);
+  background: #fffdf6;
+  outline: none;
+  text-align: center;
+}
+.text-edit-box:focus { outline: 3px solid var(--pink); }
+.text-edit-box::placeholder { color: #b7b0c4; }
 
 @media (max-width: 640px) {
   .app-header { padding: 8px 10px; gap: 10px; }
@@ -584,7 +622,9 @@ body.compact-header .problem-panel {
 
 /* From tablet width up, the toolbar becomes a sidebar down the left of
    the canvas instead of a bar across the top — stays fully on screen
-   while the canvas/page scrolls, like a normal drawing-app tool panel. */
+   while the canvas/page scrolls, like a normal drawing-app tool panel.
+   Buttons keep their original compact size (icon over label); the
+   sidebar is just a 3-per-row grid of them instead of one long row. */
 @media (min-width: 641px) {
   .workspace {
     display: flex;
@@ -593,10 +633,10 @@ body.compact-header .problem-panel {
   }
 
   .toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    flex-wrap: nowrap;
-    width: 180px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 196px;
     flex: none;
     position: sticky;
     top: 0;
@@ -607,30 +647,18 @@ body.compact-header .problem-panel {
     border-right: 2px solid #ffd6e8;
   }
 
-  .toolbar .tool-btn {
-    flex-direction: row;
-    justify-content: flex-start;
-    width: 100%;
-    gap: 10px;
-    padding: 10px 12px;
-  }
-  .toolbar .tool-btn span {
-    font-size: 13px;
-    text-align: left;
-  }
-
   .toolbar .tool-sep {
-    width: auto;
-    height: 2px;
-    margin: 4px 0;
+    display: none;
   }
 
   .toolbar .color-palette {
+    grid-column: 1 / -1;
     max-width: none;
+    justify-content: center;
   }
 
   .toolbar .zoom-group {
-    width: 100%;
+    grid-column: 1 / -1;
     justify-content: center;
   }
 

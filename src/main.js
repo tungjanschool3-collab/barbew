@@ -61,16 +61,11 @@ if ("requestIdleCallback" in window) {
 // currently open should just insert it there, instead of stamping a
 // separate standalone symbol object onto the canvas.
 function insertAtCursor(el, text) {
-  const sel = window.getSelection();
-  if (!sel.rangeCount) return;
-  const range = sel.getRangeAt(0);
-  range.deleteContents();
-  const node = document.createTextNode(text);
-  range.insertNode(node);
-  range.setStartAfter(node);
-  range.setEndAfter(node);
-  sel.removeAllRanges();
-  sel.addRange(range);
+  const start = el.selectionStart ?? el.value.length;
+  const end = el.selectionEnd ?? el.value.length;
+  el.value = el.value.slice(0, start) + text + el.value.slice(end);
+  const pos = start + text.length;
+  el.setSelectionRange(pos, pos);
 }
 
 const toolButtons = document.querySelectorAll(".tool-btn[data-tool]");
