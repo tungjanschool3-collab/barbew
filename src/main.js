@@ -137,9 +137,10 @@ updateZoomLabel();
 window.addEventListener("keydown", (e) => {
   const tag = document.activeElement.tagName;
   if (tag === "TEXTAREA" || tag === "INPUT" || document.activeElement.isContentEditable) return;
-  if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); editor.undo(); }
-  if ((e.ctrlKey || e.metaKey) && e.key === "c") { e.preventDefault(); editor.copySelected(); }
-  if ((e.ctrlKey || e.metaKey) && e.key === "v") { e.preventDefault(); editor.pasteClipboard(); }
+  const shortcutKey = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && shortcutKey === "z") { e.preventDefault(); editor.undo(); }
+  if ((e.ctrlKey || e.metaKey) && shortcutKey === "c") { e.preventDefault(); editor.copySelected(); }
+  if ((e.ctrlKey || e.metaKey) && shortcutKey === "v") { e.preventDefault(); editor.pasteClipboard(); }
   if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "=")) {
     e.preventDefault();
     editor.zoomBy(0.1);
@@ -507,6 +508,8 @@ calcHeader.addEventListener("pointercancel", stopCalcDrag);
 const CALC_KEY_MAP = { "*": "×", "/": "÷", "-": "−" };
 window.addEventListener("keydown", (e) => {
   if (calc.classList.contains("hidden")) return;
+  // Leave Ctrl/Cmd shortcuts (copy, paste, undo, zoom) to the editor.
+  if (e.ctrlKey || e.metaKey) return;
   const tag = document.activeElement.tagName;
   if (tag === "TEXTAREA" || tag === "INPUT" || document.activeElement.isContentEditable) return;
 

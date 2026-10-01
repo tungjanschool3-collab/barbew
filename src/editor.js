@@ -403,8 +403,8 @@ export class BarModelEditor {
     } else if (this.tool === "symbol") {
       this._placeSymbol(x, y);
       this.drag = null;
-    } else if (this.tool === "scissors") {
-      this._divideAt(x, y);
+    } else if (this.tool === "scissors" || this.tool === "scissors-solid") {
+      this._divideAt(x, y, this.tool === "scissors-solid" ? "solid" : "dashed");
       this.drag = null;
     }
   }
@@ -769,13 +769,15 @@ export class BarModelEditor {
     document.addEventListener("mousedown", onOutsideClick, true);
   }
 
-  _divideAt(px, py) {
+  _divideAt(px, py, style = "dashed") {
     const hit = this._hitTest(px, py);
     if (!hit || hit.obj.type !== "bar") return;
     const bar = hit.obj;
     this._pushHistory();
     bar.divisions = Math.min(20, (bar.divisions || 1) + 1);
+    bar.divisionStyle = style;
     this.selectedId = bar.id;
+    this._scheduleDraw();
   }
 
   // ---------- render ----------
@@ -823,8 +825,9 @@ export class BarModelEditor {
       if (o.divisions > 1) {
         ctx.save();
         ctx.strokeStyle = "rgba(45,49,66,0.9)";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([7, 6]);
+        const solidDivision = o.divisionStyle === "solid";
+        ctx.lineWidth = solidDivision ? 5 : 2;
+        ctx.setLineDash(solidDivision ? [] : [7, 6]);
         for (let i = 1; i < o.divisions; i++) {
           const x = o.x + (o.w * i) / o.divisions;
           ctx.beginPath();
