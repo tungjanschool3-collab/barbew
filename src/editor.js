@@ -826,7 +826,7 @@ export class BarModelEditor {
         ctx.save();
         ctx.strokeStyle = "rgba(45,49,66,0.9)";
         const solidDivision = o.divisionStyle === "solid";
-        ctx.lineWidth = solidDivision ? 5 : 2;
+        ctx.lineWidth = solidDivision ? 5 : 4;
         ctx.setLineDash(solidDivision ? [] : [7, 6]);
         for (let i = 1; i < o.divisions; i++) {
           const x = o.x + (o.w * i) / o.divisions;
