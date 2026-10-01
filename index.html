@@ -31,6 +31,7 @@
         📁 อัปโหลดไฟล์
         <input type="file" id="fileUpload" accept=".txt" hidden multiple />
       </label>
+      <button id="btnPrintPdf" class="pill-btn print-btn" title="พิมพ์เป็น PDF ขนาด A4">🖨️ พิมพ์ PDF</button>
       <span id="saveStatus" class="save-status"></span>
       <label class="fontsize-label">
         ขนาดตัวอักษร
@@ -38,6 +39,20 @@
       </label>
     </div>
     <textarea id="problemText" class="problem-text" placeholder="พิมพ์โจทย์ปัญหาที่นี่... หรืออัปโหลดไฟล์ .txt (แยกแต่ละข้อด้วยบรรทัดว่าง)"></textarea>
+
+    <!-- Print-only worksheet header: name/class/number blanks, the
+         worksheet title, and a plain-text copy of the problem — shown
+         only when printing (see the @media print rules in style.css),
+         in place of the on-screen controls and the student answer box. -->
+    <div class="print-sheet-header">
+      <div class="print-student-line">
+        <span>ชื่อ<span class="fill-line long"></span></span>
+        <span>ชั้น<span class="fill-line short"></span></span>
+        <span>เลขที่<span class="fill-line short"></span></span>
+      </div>
+      <div class="print-worksheet-title">แบบฝึกหัด โจทย์ปัญหาหลายขั้นตอน</div>
+      <div class="print-problem-text" id="printProblemText"></div>
+    </div>
 
     <div class="answer-row">
       <label class="answer-field student-field">

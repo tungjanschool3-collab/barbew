@@ -24,6 +24,7 @@ export class BarModelEditor {
     this.onZoomChange = null;
     this._worldHeightPx = 0;
     this._pendingGesture = null;
+    this.printMode = false;
 
     this._drawScheduled = false;
     this._bindEvents();
@@ -232,9 +233,20 @@ export class BarModelEditor {
     // A fixed viewport-relative floor (not the wrap's own rendered height,
     // which the canvas itself now partly determines — using that would be
     // circular and could never shrink back down after deleting content).
-    const floor = window.innerHeight * 0.6;
-    const contentBottomPx = this._contentBottomWorld() * this.scale + 200;
+    // While printing there's no viewport to fill, so skip the floor —
+    // otherwise every printout would pad out to a near-full blank page.
+    const floor = this.printMode ? 0 : window.innerHeight * 0.6;
+    const margin = this.printMode ? 40 : 200;
+    const contentBottomPx = this._contentBottomWorld() * this.scale + margin;
     return Math.max(floor, contentBottomPx);
+  }
+
+  // Toggled around printing so the canvas shrinks to fit just its content
+  // instead of padding out to the screen's viewport height.
+  setPrintMode(on) {
+    this.printMode = on;
+    this._resize();
+    this._scheduleDraw();
   }
 
   _applyCanvasSize(heightPx) {
@@ -657,8 +669,13 @@ export class BarModelEditor {
     input.className = "text-edit-box";
     input.placeholder = "เช่น 1,250,000 หรือ 3.125 หรือ รวม";
     input.value = existing ? (isLabel ? existing.label || "" : existing.text || "") : "";
+    const okBtn = document.createElement("button");
+    okBtn.type = "button";
+    okBtn.className = "text-modal-ok";
+    okBtn.textContent = "ตกลง";
     modal.appendChild(title);
     modal.appendChild(input);
+    modal.appendChild(okBtn);
     backdrop.appendChild(modal);
     document.body.appendChild(backdrop);
     input.focus();
@@ -699,6 +716,7 @@ export class BarModelEditor {
       backdrop.remove();
     };
 
+    okBtn.addEventListener("click", commit);
     input.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") {
         ev.preventDefault();

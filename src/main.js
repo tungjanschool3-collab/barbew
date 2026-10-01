@@ -528,3 +528,16 @@ window.addEventListener("keydown", (e) => {
 // ---- scratch paper (freehand pen/finger drawing area) ----
 const scratchPad = new ScratchPad(document.getElementById("scratchpad"));
 document.getElementById("btnScratch").addEventListener("click", () => scratchPad.toggle());
+
+// ---- print to PDF (A4) ----
+// Fills in the print-only worksheet header (name/class/number blanks +
+// a plain-text copy of the current problem, prefixed "-ข้อ N") right
+// before printing, whether triggered by our button or Ctrl+P/Cmd+P.
+const printProblemText = document.getElementById("printProblemText");
+function preparePrintSheet() {
+  printProblemText.textContent = `-ข้อ ${currentIndex + 1} ${problemText.value.trim()}`;
+  editor.setPrintMode(true);
+}
+window.addEventListener("beforeprint", preparePrintSheet);
+window.addEventListener("afterprint", () => editor.setPrintMode(false));
+document.getElementById("btnPrintPdf").addEventListener("click", () => window.print());

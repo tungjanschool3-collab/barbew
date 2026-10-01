@@ -208,6 +208,9 @@ body.compact-header .problem-panel {
 .teacher-answer { border-color: var(--purple); width: 150px; }
 
 .check-btn { background: var(--green); }
+.print-btn { background: var(--ink); }
+
+.print-sheet-header { display: none; }
 
 .answer-feedback {
   font-weight: 800;
@@ -572,6 +575,23 @@ body.compact-header .problem-panel {
 .text-edit-box:focus { outline: 3px solid var(--pink); }
 .text-edit-box::placeholder { color: #b7b0c4; }
 
+.text-modal-ok {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  border: none;
+  background: var(--green);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: inherit;
+  padding: 10px 0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform .1s ease;
+}
+.text-modal-ok:hover { transform: scale(1.03); }
+
 @media (max-width: 640px) {
   .app-header { padding: 8px 10px; gap: 10px; }
   .logo-wrap { width: 44px; height: 44px; }
@@ -665,5 +685,87 @@ body.compact-header .problem-panel {
   .canvas-wrap {
     flex: 1;
     min-width: 0;
+  }
+}
+
+/* Print to PDF (A4) — a clean worksheet: name/class/number blanks, the
+   problem text, and the bar-model drawing. Every editing control (the
+   toolbar, buttons, the student answer-check box, etc.) is hidden. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+
+  .toggle-header-btn,
+  .app-header,
+  .problem-panel-row,
+  .answer-row,
+  .problem-text,
+  .toolbar,
+  .scroll-btns,
+  .calculator,
+  .scratchpad,
+  .app-footer {
+    display: none !important;
+  }
+
+  html, body {
+    background: white !important;
+  }
+
+  .problem-panel {
+    border-bottom: none;
+    padding: 0;
+  }
+
+  .print-sheet-header {
+    display: block;
+  }
+
+  .print-student-line {
+    display: flex;
+    gap: 22px;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .fill-line {
+    display: inline-block;
+    border-bottom: 1px solid #333;
+    min-width: 150px;
+    margin-left: 4px;
+  }
+  .fill-line.short { min-width: 60px; }
+
+  .print-worksheet-title {
+    text-align: center;
+    font-weight: 700;
+    font-size: 18px;
+    text-decoration: underline;
+    margin: 4px 0 12px;
+    color: #000;
+  }
+
+  .print-problem-text {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+    color: #000;
+  }
+
+  .workspace {
+    display: block !important;
+  }
+
+  .canvas-wrap {
+    min-height: 0;
+    width: 100% !important;
+  }
+
+  #canvas {
+    width: 100% !important;
+    height: auto !important;
   }
 }
