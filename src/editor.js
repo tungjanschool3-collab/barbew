@@ -238,7 +238,10 @@ export class BarModelEditor {
     // circular and could never shrink back down after deleting content).
     // While printing there's no viewport to fill, so skip the floor —
     // otherwise every printout would pad out to a near-full blank page.
-    const floor = this.printMode ? 0 : window.innerHeight * 0.6;
+    // Keep at least one full viewport of graph paper. Previously this used
+    // only 60vh, leaving the page's pink background exposed below short
+    // drawings instead of continuing the usable paper area.
+    const floor = this.printMode ? 0 : window.innerHeight;
     const margin = this.printMode ? 40 : 200;
     const contentBottomPx = this._contentBottomWorld() * this.scale + margin;
     return Math.max(floor, contentBottomPx);

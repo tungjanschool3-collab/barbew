@@ -282,7 +282,7 @@ body.compact-header .problem-panel {
 /* Canvas */
 .canvas-wrap {
   flex: 1;
-  min-height: 60vh;
+  min-height: 100vh;
   position: relative;
   overflow-x: hidden;
   overflow-y: visible;
@@ -623,7 +623,7 @@ body.compact-header .problem-panel {
 
   /* Guarantee the canvas is always visible with real height, even if
      everything above it runs tall on a short phone screen. */
-  .canvas-wrap { min-height: 45vh; }
+  .canvas-wrap { min-height: 100vh; }
 }
 
 /* From tablet width up, the toolbar becomes a sidebar down the left of
