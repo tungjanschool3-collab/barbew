@@ -106,11 +106,12 @@
   </div>
 
   <div id="calculator" class="calculator hidden">
-    <div class="calc-header">
-      <span>🧮 เครื่องคิดเลข</span>
+    <div class="calc-header" id="calcHeader" title="ลากเพื่อย้ายเครื่องคิดเลข">
+      <span>🧮 เครื่องคิดเลขตั้งเลข <small>ลากเพื่อย้าย</small></span>
       <button id="calcClose">✕</button>
     </div>
     <input id="calcDisplay" class="calc-display" readonly value="0" />
+    <div id="calcWork" class="calc-work" aria-live="polite"></div>
     <div class="calc-grid" id="calcGrid"></div>
   </div>
 

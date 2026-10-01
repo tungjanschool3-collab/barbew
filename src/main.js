@@ -314,6 +314,8 @@ renderProblem();
 const calc = document.getElementById("calculator");
 const calcDisplay = document.getElementById("calcDisplay");
 const calcGrid = document.getElementById("calcGrid");
+const calcWork = document.getElementById("calcWork");
+const calcHeader = document.getElementById("calcHeader");
 
 const keys = [
   ["C", "clear"], ["±", "op"], ["%", "op"], ["÷", "op"],
@@ -328,10 +330,54 @@ const keys = [
 // and evaluates it with normal order of operations (×÷ before +−).
 let calcExpr = "";
 let calcJustEvaluated = false;
+let calcWorkExpr = "";
+let calcWorkResult = null;
+
+function renderCalcWork() {
+  calcWork.replaceChildren();
+  if (!calcWorkExpr || calcWorkResult === null) {
+    const hint = document.createElement("div");
+    hint.className = "calc-work-hint";
+    hint.textContent = "พิมพ์โจทย์แล้วกด = เพื่อดูการตั้งเลข";
+    calcWork.appendChild(hint);
+    return;
+  }
+
+  const tokens = calcWorkExpr.match(/\d+\.?\d*|\.\d+|[+−×÷-]/g) || [];
+  let firstNumber = true;
+  let pendingOp = "";
+  for (const token of tokens) {
+    if (["+", "−", "×", "÷", "-"].includes(token)) {
+      pendingOp = token === "-" ? "−" : token;
+      continue;
+    }
+    if (!/^(?:\d+\.?\d*|\.\d+)$/.test(token)) continue;
+    const row = document.createElement("div");
+    row.className = "calc-work-row";
+    const op = document.createElement("span");
+    op.className = "calc-work-op";
+    op.textContent = pendingOp;
+    const value = document.createElement("span");
+    value.className = "calc-work-value";
+    value.textContent = token.startsWith(".") ? `0${token}` : token;
+    row.append(op, value);
+    calcWork.appendChild(row);
+    firstNumber = false;
+    pendingOp = "";
+  }
+
+  const line = document.createElement("div");
+  line.className = "calc-work-line";
+  const answer = document.createElement("div");
+  answer.className = "calc-work-answer";
+  answer.textContent = String(calcWorkResult);
+  calcWork.append(line, answer);
+}
 
 function renderCalc() {
   calcDisplay.value = calcExpr || "0";
   calcDisplay.scrollLeft = calcDisplay.scrollWidth;
+  renderCalcWork();
 }
 
 function evalExpression(expr) {
@@ -364,12 +410,18 @@ function evalExpression(expr) {
 
 function calcInput(key) {
   if (calcJustEvaluated) {
-    if (/[0-9.]/.test(key)) calcExpr = "";
+    if (/[0-9.]/.test(key)) {
+      calcExpr = "";
+      calcWorkExpr = "";
+      calcWorkResult = null;
+    }
     calcJustEvaluated = false;
   }
 
   if (key === "C") {
     calcExpr = "";
+    calcWorkExpr = "";
+    calcWorkResult = null;
   } else if (key === "±") {
     if (/^-?\d+\.?\d*$/.test(calcExpr)) {
       calcExpr = calcExpr.startsWith("-") ? calcExpr.slice(1) : calcExpr ? "-" + calcExpr : "";
@@ -389,8 +441,10 @@ function calcInput(key) {
   } else if (key === "=") {
     if (calcExpr) {
       const clean = calcExpr.replace(/[+\-−×÷]$/, "");
-      const result = evalExpression(clean);
-      calcExpr = String(Math.round(result * 1e8) / 1e8);
+      const result = Math.round(evalExpression(clean) * 1e8) / 1e8;
+      calcWorkExpr = clean;
+      calcWorkResult = result;
+      calcExpr = String(result);
       calcJustEvaluated = true;
     }
   } else if (key === ".") {
@@ -418,6 +472,36 @@ document.getElementById("calcClose").addEventListener("click", () => {
   calc.classList.add("hidden");
 });
 
+// Drag the calculator by its purple title bar. Converting right/bottom to
+// left/top at drag start keeps the movement smooth and clamps it on-screen.
+let calcDrag = null;
+calcHeader.addEventListener("pointerdown", (e) => {
+  if (e.target.closest("button")) return;
+  e.preventDefault();
+  const rect = calc.getBoundingClientRect();
+  calc.style.left = `${rect.left}px`;
+  calc.style.top = `${rect.top}px`;
+  calc.style.right = "auto";
+  calc.style.bottom = "auto";
+  calcDrag = { pointerId: e.pointerId, dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+  calcHeader.setPointerCapture(e.pointerId);
+  calc.classList.add("dragging");
+});
+calcHeader.addEventListener("pointermove", (e) => {
+  if (!calcDrag || calcDrag.pointerId !== e.pointerId) return;
+  const maxX = Math.max(0, window.innerWidth - calc.offsetWidth);
+  const maxY = Math.max(0, window.innerHeight - calc.offsetHeight);
+  calc.style.left = `${Math.min(maxX, Math.max(0, e.clientX - calcDrag.dx))}px`;
+  calc.style.top = `${Math.min(maxY, Math.max(0, e.clientY - calcDrag.dy))}px`;
+});
+function stopCalcDrag(e) {
+  if (!calcDrag || calcDrag.pointerId !== e.pointerId) return;
+  calcDrag = null;
+  calc.classList.remove("dragging");
+}
+calcHeader.addEventListener("pointerup", stopCalcDrag);
+calcHeader.addEventListener("pointercancel", stopCalcDrag);
+
 // Calculator keyboard input: digits, ., + - * / (mapped to our −/×/÷),
 // Enter/= to compute, Escape/C to clear, Backspace to delete a digit.
 const CALC_KEY_MAP = { "*": "×", "/": "÷", "-": "−" };
@@ -439,6 +523,8 @@ window.addEventListener("keydown", (e) => {
   } else if (key === "Backspace") {
     e.preventDefault();
     calcExpr = calcExpr.slice(0, -1);
+    calcWorkExpr = "";
+    calcWorkResult = null;
     renderCalc();
   }
 });
