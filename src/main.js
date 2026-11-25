@@ -37,14 +37,6 @@ document.getElementById("btnToggleHeader").addEventListener("click", (e) => {
   e.currentTarget.title = collapsed ? "แสดงหัวข้อและโจทย์" : "ซ่อนหัวข้อและโจทย์";
 });
 
-document.getElementById("btnAddStep").addEventListener("click", () => {
-  editor.addStep();
-  setTimeout(
-    () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }),
-    60
-  );
-});
-
 // ---- Logo ----
 const logoImage = document.querySelector("#logo3d img");
 const logoUpload = document.getElementById("logoUpload");
