@@ -7,9 +7,11 @@ let uid = 1;
 const nextId = () => uid++;
 
 export class BarModelEditor {
-  constructor(canvas, wrap) {
+  constructor(canvas, wrap, minimumHeight = window.innerHeight) {
     this.canvas = canvas;
     this.wrap = wrap;
+    this.minimumHeight = minimumHeight;
+    this.listeners = new AbortController();
     this.ctx = canvas.getContext("2d");
     this.objects = [];
     this.selectedId = null;
@@ -32,10 +34,24 @@ export class BarModelEditor {
     this._drawScheduled = false;
     this._bindEvents();
     this._resize();
-    window.addEventListener("resize", () => {
+    let observedWidth;
+    this.resizeObserver = new ResizeObserver(([entry]) => {
+      if (entry.contentRect.width === observedWidth) return;
+      observedWidth = entry.contentRect.width;
       this._resize();
       this._scheduleDraw();
     });
+    this.resizeObserver.observe(wrap);
+    this._scheduleDraw();
+  }
+
+  destroy() {
+    this.listeners.abort();
+    this.resizeObserver.disconnect();
+  }
+
+  clearSelection() {
+    this.selectedId = null;
     this._scheduleDraw();
   }
 
@@ -241,7 +257,7 @@ export class BarModelEditor {
     // Keep at least one full viewport of graph paper. Previously this used
     // only 60vh, leaving the page's pink background exposed below short
     // drawings instead of continuing the usable paper area.
-    const floor = this.printMode ? 0 : window.innerHeight;
+    const floor = this.printMode ? 0 : this.minimumHeight;
     const margin = this.printMode ? 40 : 200;
     const contentBottomPx = this._contentBottomWorld() * this.scale + margin;
     return Math.max(floor, contentBottomPx);
@@ -252,7 +268,7 @@ export class BarModelEditor {
   setPrintMode(on) {
     this.printMode = on;
     this._resize();
-    this._scheduleDraw();
+    this._draw();
   }
 
   // Returns a detached, white-background snapshot trimmed to the drawing
@@ -305,7 +321,12 @@ export class BarModelEditor {
     // right after each one runs rather than threading it through them.
     c.addEventListener("pointerdown", (e) => { this._onDown(e); this._scheduleDraw(); });
     c.addEventListener("pointermove", (e) => { this._onMove(e); this._scheduleDraw(); });
-    window.addEventListener("pointerup", (e) => { this._onUp(e); this._scheduleDraw(); });
+    window.addEventListener("pointerup", (e) => {
+      if (this.drag || this.pointers.has(e.pointerId) || this._pendingGesture) {
+        this._onUp(e);
+        this._scheduleDraw();
+      }
+    }, { signal: this.listeners.signal });
     c.addEventListener("pointercancel", (e) => { this._onUp(e); this._scheduleDraw(); });
     c.addEventListener("dblclick", (e) => { this._onDblClick(e); this._scheduleDraw(); });
     c.addEventListener(

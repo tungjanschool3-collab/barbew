@@ -12,7 +12,10 @@
   <button id="btnToggleHeader" class="toggle-header-btn" title="ซ่อน/แสดงหัวข้อและโจทย์">▲</button>
 
   <header class="app-header">
-    <div class="logo-wrap" id="logo3d"></div>
+    <label class="logo-wrap logo-picker" title="คลิกเพื่อเปลี่ยนโลโก้">
+      <span id="logo3d"><img src="/favicon.svg" alt="โลโก้ BarBew"></span>
+      <input type="file" id="logoUpload" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="เปลี่ยนโลโก้">
+    </label>
     <div class="title-block">
       <h1>Bar<span class="accent">Bew</span> 🌈</h1>
       <p class="subtitle">โปรแกรมวาดแบบจำลองบาร์ (Bar Model) เพื่อการเรียนคณิตศาสตร์</p>
@@ -96,8 +99,12 @@
       <button class="tool-btn scratch-btn" id="btnScratch" title="กระดาษทด">📝<span>กระดาษทด</span></button>
     </section>
 
-    <main class="canvas-wrap">
-      <canvas id="canvas"></canvas>
+    <main class="page-builder">
+      <div class="add-blocks">
+        <button type="button" id="addTextBlock">+ ข้อความ</button>
+        <button type="button" id="addDrawingBlock">+ วาดบาร์</button>
+      </div>
+      <div id="pageBlocks"></div>
     </main>
   </div>
 
