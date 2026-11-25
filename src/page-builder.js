@@ -1,5 +1,40 @@
 import { BarModelEditor } from "./editor.js";
 
+function addResizeHandle(block, content, resize, drawing = false) {
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "block-resize-handle";
+  handle.textContent = "↕";
+  handle.title = "ลากขึ้นหรือลงเพื่อปรับความสูง";
+  handle.setAttribute("aria-label", "ปรับความสูงของกล่องด้วยลูกศรขึ้นหรือลง");
+  let drag;
+
+  const setHeight = (height) => {
+    block.height = Math.round(Math.max(drawing ? 64 : 44, Math.min(1600, height)));
+    resize();
+  };
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || drag) return;
+    event.preventDefault();
+    handle.focus({ preventScroll: true });
+    handle.setPointerCapture(event.pointerId);
+    drag = { id: event.pointerId, y: event.clientY, height: content.getBoundingClientRect().height };
+  });
+  handle.addEventListener("pointermove", (event) => {
+    if (drag?.id === event.pointerId) setHeight(drag.height + event.clientY - drag.y);
+  });
+  handle.addEventListener("lostpointercapture", (event) => {
+    if (drag?.id === event.pointerId) drag = null;
+  });
+  handle.addEventListener("keydown", (event) => {
+    const delta = { ArrowUp: -20, ArrowDown: 20 }[event.key];
+    if (!delta) return;
+    event.preventDefault();
+    setHeight(content.getBoundingClientRect().height + delta);
+  });
+  block.node.append(handle);
+}
+
 export function createPageBuilder(root, onActivate) {
   const blocks = [];
   let active;
@@ -18,12 +53,12 @@ export function createPageBuilder(root, onActivate) {
     onActivate();
   }
 
-  function add(type, value, focus = false) {
+  function add(type, value, focus = false, savedHeight) {
     const node = document.createElement("section");
     node.className = "page-block";
     const controls = document.createElement("div");
     controls.className = "block-controls";
-    const block = { node, type };
+    const block = { node, type, height: Number.isFinite(savedHeight) ? Math.max(44, Math.min(1600, savedHeight)) : undefined };
     for (const [label, icon, change] of [["เลื่อนบล็อกขึ้น", "▲", -1], ["เลื่อนบล็อกลง", "▼", 1], ["ลบบล็อก", "×", 0]]) {
       const button = document.createElement("button");
       button.type = "button";
@@ -68,12 +103,13 @@ export function createPageBuilder(root, onActivate) {
       const syncText = () => {
         printText.textContent = input.value;
         input.style.height = "auto";
-        input.style.height = input.scrollHeight + 2 + "px";
+        input.style.height = Math.max(block.height || 0, input.scrollHeight + 2) + "px";
       };
       input.addEventListener("input", syncText);
       node.append(input, printText);
       syncText();
       block.input = input;
+      addResizeHandle(block, input, syncText);
       if (focus) input.focus();
     } else {
       const wrap = document.createElement("div");
@@ -89,12 +125,13 @@ export function createPageBuilder(root, onActivate) {
         else canvas.focus({ preventScroll: true });
       });
       canvas.addEventListener("focus", () => activate(block));
-      block.editor = new BarModelEditor(canvas, wrap, 270);
+      block.editor = new BarModelEditor(canvas, wrap, block.height ?? 270);
       block.editor.loadObjects(value);
       block.editor.setTool(tool);
       block.editor.setPendingSymbol(symbol);
       block.editor.setColor(color);
       block.editor.onZoomChange = onActivate;
+      addResizeHandle(block, canvas, () => block.editor.setMinimumHeight(block.height), true);
       if (focus) canvas.focus();
     }
     return block;
@@ -103,14 +140,14 @@ export function createPageBuilder(root, onActivate) {
   return {
     addText: () => add("text", "", true),
     addDrawing: () => add("drawing", [], true),
-    snapshot: () => ({ blocks: blocks.map(({ type, input, editor }) => ({ type, value: input ? input.value : editor.getObjects() })) }),
+    snapshot: () => ({ blocks: blocks.map(({ type, input, editor, height }) => ({ type, height, value: input ? input.value : editor.getObjects() })) }),
     restore(saved) {
       for (const block of blocks) block.editor?.destroy();
       blocks.length = 0;
       active = null;
       root.replaceChildren();
       if (Array.isArray(saved?.blocks)) {
-        for (const block of saved.blocks) add(block.type, block.value);
+        for (const block of saved.blocks) add(block.type, block.value, false, block.height);
       }
       if (!blocks.some((block) => block.editor)) add("drawing", Array.isArray(saved) ? saved : []);
       activate(blocks.find((block) => block.editor));

@@ -162,7 +162,7 @@ body.compact-header .problem-panel {
 .problem-text {
   width: 100%;
   min-height: 70px;
-  resize: vertical;
+  resize: none;
   border: 2px solid var(--yellow);
   border-radius: var(--radius);
   padding: 10px 14px;
@@ -833,4 +833,25 @@ body.compact-header .problem-panel {
   .page-block { border: 0; break-inside: avoid; }
   .block-print-text { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
   .page-block .drawing-canvas { width: 100% !important; height: auto !important; }
+}
+
+.block-resize-handle {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  border: 0;
+  border-top: 1px solid #ded8ec;
+  background: #f7f4fc;
+  color: #17468f;
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+@media (pointer: coarse) {
+  .block-resize-handle { min-height: 36px; }
+}
+
+@media print {
+  .block-resize-handle { display: none; }
 }

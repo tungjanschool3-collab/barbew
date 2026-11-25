@@ -264,13 +264,18 @@ export class BarModelEditor {
     // only 60vh, leaving the page's pink background exposed below short
     // drawings instead of continuing the usable paper area.
     const floor = this.printMode ? 0 : this.minimumHeight;
-    const margin = this.printMode ? 40 : 200;
+    const margin = 40;
     const contentBottomPx = this._contentBottomWorld() * this.scale + margin;
     return Math.max(floor, contentBottomPx);
   }
 
   // Toggled around printing so the canvas shrinks to fit just its content
   // instead of padding out to the screen's viewport height.
+  setMinimumHeight(height) {
+    this.minimumHeight = height;
+    this._scheduleDraw();
+  }
+
   setPrintMode(on) {
     this.printMode = on;
     this._resize();
