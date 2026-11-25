@@ -1,11 +1,11 @@
-import { BarModelEditor } from "./editor.js";
+import { createPageBuilder } from "./page-builder.js";
 import { ScratchPad } from "./scratchpad.js";
 import { PDFDocument } from "pdf-lib";
 
 // ---- editor ----
-const canvas = document.getElementById("canvas");
-const wrap = document.querySelector(".canvas-wrap");
-const editor = new BarModelEditor(canvas, wrap);
+const editor = createPageBuilder(document.getElementById("pageBlocks"), updateZoomLabel);
+document.getElementById("addTextBlock").addEventListener("click", editor.addText);
+document.getElementById("addDrawingBlock").addEventListener("click", editor.addDrawing);
 
 // Press-and-hold either scroll button to keep scrolling continuously,
 // not just one fixed jump per tap.
@@ -35,8 +35,6 @@ document.getElementById("btnToggleHeader").addEventListener("click", (e) => {
   const collapsed = document.body.classList.toggle("compact-header");
   e.currentTarget.textContent = collapsed ? "▼" : "▲";
   e.currentTarget.title = collapsed ? "แสดงหัวข้อและโจทย์" : "ซ่อนหัวข้อและโจทย์";
-  // The canvas now has more (or less) room — resize it to match.
-  window.dispatchEvent(new Event("resize"));
 });
 
 document.getElementById("btnAddStep").addEventListener("click", () => {
@@ -47,16 +45,35 @@ document.getElementById("btnAddStep").addEventListener("click", () => {
   );
 });
 
-// ---- 3D logo ----
-// Three.js (~500KB) is purely decorative here, so load it lazily after
-// the app itself is interactive rather than blocking the initial bundle.
-const startLogo3D = () =>
-  import("./logo3d.js").then(({ mountLogo3D }) => mountLogo3D(document.getElementById("logo3d")));
-if ("requestIdleCallback" in window) {
-  requestIdleCallback(startLogo3D, { timeout: 2000 });
-} else {
-  setTimeout(startLogo3D, 300);
+// ---- Logo ----
+const logoImage = document.querySelector("#logo3d img");
+const logoUpload = document.getElementById("logoUpload");
+try {
+  const savedLogo = localStorage.getItem("barbew.logo");
+  if (savedLogo) logoImage.src = savedLogo;
+} catch {
+  // Keep the bundled logo when browser storage is unavailable.
 }
+logoUpload.addEventListener("change", async () => {
+  const file = logoUpload.files[0];
+  if (!file) return;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const preview = document.createElement("canvas");
+    const scale = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+    preview.width = Math.max(1, Math.round(bitmap.width * scale));
+    preview.height = Math.max(1, Math.round(bitmap.height * scale));
+    preview.getContext("2d").drawImage(bitmap, 0, 0, preview.width, preview.height);
+    bitmap.close();
+    const image = preview.toDataURL("image/png");
+    logoImage.src = image;
+    localStorage.setItem("barbew.logo", image);
+  } catch {
+    alert("บันทึกโลโก้ไม่ได้ กรุณาตรวจสอบไฟล์รูปภาพและพื้นที่จัดเก็บของเบราว์เซอร์");
+  } finally {
+    logoUpload.value = "";
+  }
+});
 
 // Typing a math symbol character directly into a label/text box that's
 // currently open should just insert it there, instead of stamping a
@@ -130,17 +147,16 @@ document.getElementById("btnZoomOut").addEventListener("click", () => editor.zoo
 function updateZoomLabel() {
   document.getElementById("zoomLabel").textContent = Math.round(editor.scale * 100) + "%";
 }
-editor.onZoomChange = updateZoomLabel;
 updateZoomLabel();
 
 // keyboard shortcuts
 window.addEventListener("keydown", (e) => {
-  const tag = document.activeElement.tagName;
-  if (tag === "TEXTAREA" || tag === "INPUT" || document.activeElement.isContentEditable) return;
+  const tag = document.activeElement?.tagName;
+  if (tag === "TEXTAREA" || tag === "INPUT" || document.activeElement?.isContentEditable) return;
   const shortcutKey = e.key.toLowerCase();
   if ((e.ctrlKey || e.metaKey) && shortcutKey === "z") { e.preventDefault(); editor.undo(); }
-  if ((e.ctrlKey || e.metaKey) && shortcutKey === "c") { e.preventDefault(); editor.copySelected(); }
-  if ((e.ctrlKey || e.metaKey) && shortcutKey === "v") { e.preventDefault(); editor.pasteClipboard(); }
+  if ((e.ctrlKey || e.metaKey) && (shortcutKey === "c" || e.code === "KeyC") && editor.copySelected()) e.preventDefault();
+  if ((e.ctrlKey || e.metaKey) && (shortcutKey === "v" || e.code === "KeyV") && editor.pasteClipboard()) e.preventDefault();
   if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "=")) {
     e.preventDefault();
     editor.zoomBy(0.1);
@@ -196,8 +212,9 @@ function loadSavedProblems() {
 function persistProblems() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(problems));
+    return true;
   } catch {
-    // storage unavailable (private browsing, quota) — save silently fails
+    return false;
   }
 }
 
@@ -214,8 +231,9 @@ function loadSavedDrawings() {
 function persistDrawings() {
   try {
     localStorage.setItem(DRAWINGS_KEY, JSON.stringify(drawings));
+    return true;
   } catch {
-    // storage unavailable (private browsing, quota) — save silently fails
+    return false;
   }
 }
 
@@ -227,7 +245,7 @@ let currentIndex = 0;
 // Snapshot whatever is currently on the canvas into the drawing slot for
 // the problem we're about to navigate away from.
 function saveCurrentDrawing() {
-  drawings[currentIndex] = editor.getObjects();
+  drawings[currentIndex] = editor.snapshot();
 }
 
 fontSizeRange.addEventListener("input", () => {
@@ -242,7 +260,7 @@ problemText.addEventListener("input", () => {
 function renderProblem() {
   problemText.value = problems[currentIndex] || "";
   problemIndexLabel.textContent = `ข้อที่ ${currentIndex + 1}/${problems.length}`;
-  editor.loadObjects(drawings[currentIndex] || []);
+  editor.restore(drawings[currentIndex]);
 }
 
 function flashSaveStatus(msg) {
@@ -275,9 +293,9 @@ document.getElementById("btnNewProblem").addEventListener("click", () => {
 document.getElementById("btnSaveProblem").addEventListener("click", () => {
   problems[currentIndex] = problemText.value;
   saveCurrentDrawing();
-  persistProblems();
-  persistDrawings();
-  flashSaveStatus("✅ บันทึกแล้ว");
+  const drawingSaved = persistDrawings();
+  const problemsSaved = persistProblems();
+  flashSaveStatus(drawingSaved && problemsSaved ? "✅ บันทึกแล้ว" : "บันทึกไม่สำเร็จ กรุณาตรวจสอบพื้นที่จัดเก็บของเบราว์เซอร์");
 });
 
 fileUpload.addEventListener("change", async (e) => {
@@ -296,10 +314,10 @@ fileUpload.addEventListener("change", async (e) => {
     problems = allProblems;
     drawings = allProblems.map(() => []);
     currentIndex = 0;
-    persistProblems();
-    persistDrawings();
+    const drawingSaved = persistDrawings();
+    const problemsSaved = persistProblems();
     renderProblem();
-    flashSaveStatus("✅ นำเข้าและบันทึกแล้ว");
+    flashSaveStatus(drawingSaved && problemsSaved ? "✅ นำเข้าและบันทึกแล้ว" : "นำเข้าแล้ว แต่บันทึกไม่สำเร็จ");
   }
   fileUpload.value = "";
 });
@@ -636,13 +654,21 @@ async function worksheetPdfBytes(existingBytes = null) {
 }
 
 document.getElementById("btnSaveImage").addEventListener("click", async () => {
-  const blob = await canvasToBlob(editor.createExportCanvas());
-  downloadBlob(blob, `${safeFilename(`barbew-ข้อ-${currentIndex + 1}`)}.png`);
+  try {
+    const blob = await canvasToBlob(editor.createExportCanvas());
+    downloadBlob(blob, `${safeFilename(`barbew-ข้อ-${currentIndex + 1}`)}.png`);
+  } catch {
+    alert("บันทึกภาพไม่สำเร็จ กรุณาลองใหม่");
+  }
 });
 
 document.getElementById("btnExportPdf").addEventListener("click", async () => {
-  const bytes = await worksheetPdfBytes();
-  downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${safeFilename(`barbew-ข้อ-${currentIndex + 1}`)}.pdf`);
+  try {
+    const bytes = await worksheetPdfBytes();
+    downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${safeFilename(`barbew-ข้อ-${currentIndex + 1}`)}.pdf`);
+  } catch {
+    alert("ส่งออก PDF ไม่สำเร็จ กรุณาลองใหม่");
+  }
 });
 
 existingPdfInput.addEventListener("change", async () => {
