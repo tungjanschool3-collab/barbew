@@ -1,6 +1,8 @@
 // BarModel canvas editor — bars, lines, brackets, braces, text, equal divisions, copy/paste, undo.
 
 const GRID_CM = 40;
+const SPAN_LABEL_SIZE = 26;
+const SPAN_LABEL_COLOR = "#17468f";
 
 const PALETTE = ["#ff6b9d", "#ffa94d", "#ffd93d", "#6bcb77", "#4d96ff", "#a06cd5"];
 let uid = 1;
@@ -225,7 +227,11 @@ export class BarModelEditor {
   // Bottom edge (world/unscaled coordinates) of one object.
   _objectBottom(o) {
     if (o.type === "line") return Math.max(o.y1, o.y2);
-    if (o.type === "bracket" || o.type === "brace") return o.y + Math.abs(o.dir || 1) * 50;
+    if (o.type === "bracket" || o.type === "brace") {
+      const labelOffset = o.type === "brace" ? 30 : 20;
+      const labelBottom = o.label && (o.dir || 1) > 0 ? labelOffset + SPAN_LABEL_SIZE : 0;
+      return o.y + Math.max(50, labelBottom);
+    }
     if (o.type === "text") return o.y + (o.fontSize || 24);
     return (o.y || 0) + (o.h || 0);
   }
@@ -1005,8 +1011,8 @@ function drawResizeHandle(ctx, x, y) {
 
 function drawSpanLabel(ctx, o, extra = 20) {
   if (!o.label) return;
-  ctx.fillStyle = o.color;
-  ctx.font = "bold 18px Kanit, sans-serif";
+  ctx.fillStyle = SPAN_LABEL_COLOR;
+  ctx.font = `bold ${SPAN_LABEL_SIZE}px Kanit, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = (o.dir || 1) > 0 ? "top" : "bottom";
   ctx.fillText(o.label, o.x + o.w / 2, o.y + (o.dir || 1) * extra);
