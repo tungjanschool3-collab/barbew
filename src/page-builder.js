@@ -4,7 +4,6 @@ function addResizeHandle(block, content, resize, drawing = false) {
   const handle = document.createElement("button");
   handle.type = "button";
   handle.className = "block-resize-handle";
-  handle.textContent = "↕";
   handle.title = "ลากขึ้นหรือลงเพื่อปรับความสูง";
   handle.setAttribute("aria-label", "ปรับความสูงของกล่องด้วยลูกศรขึ้นหรือลง");
   let drag;
