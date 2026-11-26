@@ -5,6 +5,9 @@ import { PDFDocument } from "pdf-lib";
 // ---- editor ----
 const editor = createPageBuilder(document.getElementById("pageBlocks"), updateZoomLabel);
 document.getElementById("addEquationBlock").addEventListener("click", editor.addEquation);
+document.getElementById("btnTextBorder").addEventListener("click", () => {
+  if (!editor.toggleTextBorder()) flashSaveStatus("เลือกข้อความที่ต้องการเปิดหรือปิดกรอบก่อน");
+});
 document.getElementById("btnRotateBrace").addEventListener("click", () => {
   if (!editor.rotateBrace()) flashSaveStatus("เลือกปีกกาที่ต้องการหมุนก่อน");
 });

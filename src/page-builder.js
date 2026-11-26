@@ -144,6 +144,7 @@ export function createPageBuilder(root, onActivate) {
 
   return {
     addEquation: () => add("equation", "", true),
+    toggleTextBorder: () => active.editor.toggleSelectedTextBorder(),
     rotateBrace: () => active.editor.rotateSelectedBrace(),
     addText: () => add("text", "", true),
     addDrawing: () => add("drawing", [], true),

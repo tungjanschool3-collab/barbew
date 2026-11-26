@@ -52,6 +52,15 @@ export class BarModelEditor {
     this.resizeObserver.disconnect();
   }
 
+  toggleSelectedTextBorder() {
+    const text = this._findById(this.selectedId);
+    if (text?.type !== "text") return false;
+    this._pushHistory();
+    text.border = !text.border;
+    this._scheduleDraw();
+    return true;
+  }
+
   rotateSelectedBrace() {
     const brace = this._findById(this.selectedId);
     if (brace?.type !== "brace") return false;
@@ -452,6 +461,12 @@ export class BarModelEditor {
         };
       }
     } else if (this.tool === "text") {
+      const hit = this._hitTest(x, y, "text");
+      if (hit) {
+        this.selectedId = hit.obj.id;
+        this.drag = { mode: "move", obj: hit.obj, startX: x, startY: y, orig: { ...hit.obj }, pendingTextMove: true };
+        return;
+      }
       this.selectedId = null;
       this.drag = { mode: "create-text", pointerId: e.pointerId, startX: x, startY: y };
     } else if (this.tool === "symbol") {
@@ -578,6 +593,11 @@ export class BarModelEditor {
     } else if (this.drag.mode === "move") {
       const dx = x - this.drag.startX;
       const dy = y - this.drag.startY;
+      if (this.drag.pendingTextMove) {
+        if (Math.hypot(dx, dy) < 3 / this.scale) return;
+        this._pushHistory();
+        this.drag.pendingTextMove = false;
+      }
       const obj = this.drag.obj;
       const orig = this.drag.orig;
       if (obj.type === "line") {
@@ -680,10 +700,11 @@ export class BarModelEditor {
     if (hit && hit.obj) this._editLabelFor(hit.obj);
   }
 
-  _hitTest(px, py) {
+  _hitTest(px, py, type) {
     const tol = 8 / this.scale;
     for (let i = this.objects.length - 1; i >= 0; i--) {
       const o = this.objects[i];
+      if (type && o.type !== type) continue;
       if (o.type === "bar") {
         // Only the bottom-right corner is a resize handle (matches the one
         // handle drawn when selected); the rest of the body just moves it.
@@ -719,8 +740,12 @@ export class BarModelEditor {
           return { obj: o };
         }
       } else if (o.type === "text") {
-        const w = Math.max(20, o.text.length * (o.fontSize * 0.55));
-        if (px >= o.x - 4 && px <= o.x + w && py >= o.y - o.fontSize && py <= o.y + 6) {
+        this.ctx.save();
+        this.ctx.font = `bold ${o.fontSize}px Kanit, sans-serif`;
+        const w = Math.max(20, this.ctx.measureText(o.text).width);
+        this.ctx.restore();
+        const padding = o.border ? 7 : 4;
+        if (px >= o.x - padding && px <= o.x + w + padding && py >= o.y - o.fontSize - padding && py <= o.y + padding + 3) {
           return { obj: o };
         }
       }
@@ -812,8 +837,9 @@ export class BarModelEditor {
         if (!val) this.objects = this.objects.filter((o) => o !== existing);
       } else if (val) {
         this._pushHistory();
+        this.selectedId = nextId();
         this.objects.push({
-          id: nextId(),
+          id: this.selectedId,
           type: "text",
           x,
           y,
@@ -989,12 +1015,11 @@ export class BarModelEditor {
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
       ctx.fillText(o.text, o.x, o.y);
-      if (selected) {
-        const w = Math.max(20, o.text.length * (o.fontSize * 0.55));
-        ctx.strokeStyle = "#333";
-        ctx.setLineDash([4, 4]);
-        ctx.strokeRect(o.x - 4, o.y - o.fontSize, w + 8, o.fontSize + 10);
-        ctx.setLineDash([]);
+      if (o.border) {
+        const w = Math.max(20, ctx.measureText(o.text).width);
+        ctx.strokeStyle = o.color;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(o.x - 7, o.y - o.fontSize - 4, w + 14, o.fontSize + 11);
       }
     }
     ctx.restore();
