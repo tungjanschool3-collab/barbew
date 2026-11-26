@@ -452,8 +452,8 @@ export class BarModelEditor {
         };
       }
     } else if (this.tool === "text") {
-      this._createTextAt(x, y);
-      this.drag = null;
+      this.selectedId = null;
+      this.drag = { mode: "create-text", pointerId: e.pointerId, startX: x, startY: y };
     } else if (this.tool === "symbol") {
       this._placeSymbol(x, y);
       this.drag = null;
@@ -531,7 +531,19 @@ export class BarModelEditor {
 
     const { x, y } = this._toWorld(e.clientX, e.clientY);
 
-    if (this.drag.mode === "create-bar") {
+    if (this.drag.mode === "create-text") {
+      const d = this.drag;
+      if (d.pointerId !== e.pointerId) return;
+      const endX = Math.max(0, Math.min(this.wrap.clientWidth / this.scale, x));
+      const endY = Math.max(0, Math.min(this._worldHeightPx / this.scale, y));
+      d.preview = Math.hypot(endX - d.startX, endY - d.startY) > 6 / this.scale ? {
+        type: "frame",
+        x: Math.min(d.startX, endX),
+        y: Math.min(d.startY, endY),
+        w: Math.max(12, Math.abs(endX - d.startX)),
+        h: Math.max(26, Math.abs(endY - d.startY)),
+      } : null;
+    } else if (this.drag.mode === "create-bar") {
       const sx = this.drag.startX, sy = this.drag.startY;
       this.drag.preview = {
         type: "bar",
@@ -630,7 +642,15 @@ export class BarModelEditor {
     }
     const d = this.drag;
 
-    if (d.mode === "create-bar" && d.preview && d.preview.w > 6 && d.preview.h > 6) {
+    if (d.mode === "create-text") {
+      if (d.pointerId !== e.pointerId) return;
+      this.drag = null;
+      if (e.type !== "pointercancel") {
+        const x = d.preview?.x ?? d.startX;
+        const y = d.preview ? d.preview.y + 24 : d.startY;
+        this._createTextAt(x, y);
+      }
+    } else if (d.mode === "create-bar" && d.preview && d.preview.w > 6 && d.preview.h > 6) {
       this._pushHistory();
       const obj = { id: nextId(), ...d.preview };
       this.objects.push(obj);
