@@ -52,6 +52,20 @@ export class BarModelEditor {
     this.resizeObserver.disconnect();
   }
 
+  rotateSelectedBrace() {
+    const brace = this._findById(this.selectedId);
+    if (brace?.type !== "brace") return false;
+    this._pushHistory();
+    brace.rotation = ((brace.rotation || 0) + 1) % 4;
+    const center = brace.x + brace.w / 2;
+    const halfWidth = brace.rotation % 2 ? 64 : brace.w / 2;
+    const right = this.wrap.clientWidth / this.scale - halfWidth;
+    brace.x += Math.max(halfWidth, Math.min(right, center)) - center;
+    brace.y = Math.max(brace.y, brace.rotation % 2 ? brace.w / 2 + 8 : 64);
+    this._scheduleDraw();
+    return true;
+  }
+
   clearSelection() {
     this.selectedId = null;
     this._scheduleDraw();
@@ -228,8 +242,12 @@ export class BarModelEditor {
   _objectBottom(o) {
     if (o.type === "line") return Math.max(o.y1, o.y2);
     if (o.type === "bracket" || o.type === "brace") {
+      if (o.type === "brace" && o.rotation % 2) {
+        return o.y + Math.max(o.w / 2, (o.label?.length || 0) * SPAN_LABEL_SIZE * 0.35);
+      }
       const labelOffset = o.type === "brace" ? 30 : 20;
-      const labelBottom = o.label && (o.dir || 1) > 0 ? labelOffset + SPAN_LABEL_SIZE : 0;
+      const labelDirection = (o.dir || 1) * (o.type === "brace" && o.rotation === 2 ? -1 : 1);
+      const labelBottom = o.label && labelDirection > 0 ? labelOffset + SPAN_LABEL_SIZE : 0;
       return o.y + Math.max(50, labelBottom);
     }
     if (o.type === "text") return o.y + (o.fontSize || 24);
@@ -278,6 +296,7 @@ export class BarModelEditor {
 
   setPrintMode(on) {
     this.printMode = on;
+    this.worksheetFont = on;
     this._resize();
     this._draw();
   }
@@ -285,7 +304,9 @@ export class BarModelEditor {
   // Returns a detached, white-background snapshot trimmed to the drawing
   // content. Selection handles are hidden and the live editor is restored
   // immediately after the copy is made.
-  createExportCanvas() {
+  createExportCanvas(worksheet = false) {
+    const oldWorksheetFont = this.worksheetFont;
+    this.worksheetFont = worksheet;
     const oldSelectedId = this.selectedId;
     const oldPrintMode = this.printMode;
     this.selectedId = null;
@@ -303,6 +324,7 @@ export class BarModelEditor {
 
     this.selectedId = oldSelectedId;
     this.printMode = oldPrintMode;
+    this.worksheetFont = oldWorksheetFont;
     this._resize();
     this._draw();
     return output;
@@ -572,7 +594,15 @@ export class BarModelEditor {
           };
         }
       } else if (obj.type === "bracket" || obj.type === "brace") {
-        obj.w = Math.max(30, orig.w + dx);
+        if (obj.type === "brace" && obj.rotation) {
+          const angle = braceAngle(obj);
+          const span = dx * Math.cos(angle) + dy * Math.sin(angle);
+          obj.w = Math.max(30, orig.w + span);
+          obj.x = orig.x + (obj.w - orig.w) * (Math.cos(angle) - 1) / 2;
+          obj.y = orig.y + (obj.w - orig.w) * Math.sin(angle) / 2;
+        } else {
+          obj.w = Math.max(30, orig.w + dx);
+        }
       } else if (obj.type === "line") {
         if (this.drag.handle === "p1") {
           obj.x1 = orig.x1 + dx;
@@ -661,10 +691,11 @@ export class BarModelEditor {
         if (Math.abs(px - o.x2) < tol && Math.abs(py - o.y2) < tol) return { obj: o, handle: "p2" };
         if (this._distToSeg(px, py, o.x1, o.y1, o.x2, o.y2) < tol) return { obj: o };
       } else if (o.type === "bracket" || o.type === "brace") {
-        if (Math.abs(px - (o.x + o.w)) < tol && Math.abs(py - o.y) < tol * 2) {
+        const { x, y } = o.type === "brace" ? braceLocalPoint(o, px, py) : { x: px, y: py };
+        if (Math.abs(x - (o.x + o.w)) < tol && Math.abs(y - o.y) < tol * 2) {
           return { obj: o, handle: "resize" };
         }
-        if (px >= o.x - tol && px <= o.x + o.w + tol && Math.abs(py - o.y) < 20) {
+        if (x >= o.x - tol && x <= o.x + o.w + tol && Math.abs(y - o.y) < (o.type === "brace" ? 32 : 20)) {
           return { obj: o };
         }
       } else if (o.type === "text") {
@@ -882,7 +913,7 @@ export class BarModelEditor {
       }
       if (o.label) {
         ctx.fillStyle = "#fff";
-        ctx.font = "bold 28px Kanit, sans-serif";
+        ctx.font = `bold 28px ${this.worksheetFont ? "Sarabun" : "Kanit"}, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(o.label, o.x + o.w / 2, o.y + o.h / 2);
@@ -922,15 +953,19 @@ export class BarModelEditor {
       ctx.lineTo(o.x + o.w, o.y + h);
       ctx.lineTo(o.x + o.w, o.y);
       ctx.stroke();
-      drawSpanLabel(ctx, o);
+      drawSpanLabel(ctx, o, 20, this.worksheetFont);
       if (selected) drawHandle(ctx, o.x + o.w, o.y);
     } else if (o.type === "brace") {
+      const center = o.x + o.w / 2;
+      ctx.translate(center, o.y);
+      ctx.rotate(braceAngle(o));
+      ctx.translate(-center, -o.y);
       drawBrace(ctx, o.x, o.x + o.w, o.y, 18 * (o.dir || 1), o.color);
-      drawSpanLabel(ctx, o, 30);
+      drawSpanLabel(ctx, o, 30, this.worksheetFont);
       if (selected) drawHandle(ctx, o.x + o.w, o.y);
     } else if (o.type === "text") {
       ctx.fillStyle = o.color;
-      ctx.font = `bold ${o.fontSize}px Kanit, sans-serif`;
+      ctx.font = `bold ${o.fontSize}px ${this.worksheetFont ? "Sarabun" : "Kanit"}, sans-serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
       ctx.fillText(o.text, o.x, o.y);
@@ -1014,10 +1049,25 @@ function drawResizeHandle(ctx, x, y) {
   ctx.stroke();
 }
 
-function drawSpanLabel(ctx, o, extra = 20) {
+function braceAngle(brace) {
+  return (brace.rotation || 0) * Math.PI / 2;
+}
+
+function braceLocalPoint(brace, x, y) {
+  const center = brace.x + brace.w / 2;
+  const dx = x - center;
+  const dy = y - brace.y;
+  const angle = braceAngle(brace);
+  return {
+    x: center + dx * Math.cos(angle) + dy * Math.sin(angle),
+    y: brace.y - dx * Math.sin(angle) + dy * Math.cos(angle),
+  };
+}
+
+function drawSpanLabel(ctx, o, extra, worksheet) {
   if (!o.label) return;
   ctx.fillStyle = SPAN_LABEL_COLOR;
-  ctx.font = `bold ${SPAN_LABEL_SIZE}px Kanit, sans-serif`;
+  ctx.font = `bold ${SPAN_LABEL_SIZE}px ${worksheet ? "Sarabun" : "Kanit"}, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = (o.dir || 1) > 0 ? "top" : "bottom";
   ctx.fillText(o.label, o.x + o.w / 2, o.y + (o.dir || 1) * extra);

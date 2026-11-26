@@ -4,6 +4,10 @@ import { PDFDocument } from "pdf-lib";
 
 // ---- editor ----
 const editor = createPageBuilder(document.getElementById("pageBlocks"), updateZoomLabel);
+document.getElementById("addEquationBlock").addEventListener("click", editor.addEquation);
+document.getElementById("btnRotateBrace").addEventListener("click", () => {
+  if (!editor.rotateBrace()) flashSaveStatus("เลือกปีกกาที่ต้องการหมุนก่อน");
+});
 document.getElementById("addTextBlock").addEventListener("click", editor.addText);
 document.getElementById("addDrawingBlock").addEventListener("click", editor.addDrawing);
 
@@ -76,15 +80,17 @@ function insertAtCursor(el, text) {
   el.value = el.value.slice(0, start) + text + el.value.slice(end);
   const pos = start + text.length;
   el.setSelectionRange(pos, pos);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+const symbolInput = () => document.activeElement?.matches(".text-edit-box, .equation-input");
 const toolButtons = document.querySelectorAll(".tool-btn[data-tool]");
 toolButtons.forEach((btn) => {
   if (btn.dataset.symbol) {
     // Keep whatever inline editor is currently focused from losing focus
     // when this button is pressed, so we can insert into it instead.
-    btn.addEventListener("mousedown", (e) => {
-      if (document.activeElement && document.activeElement.classList.contains("text-edit-box")) {
+    btn.addEventListener("pointerdown", (e) => {
+      if (document.activeElement && symbolInput()) {
         e.preventDefault();
       }
     });
@@ -93,7 +99,7 @@ toolButtons.forEach((btn) => {
     if (
       btn.dataset.symbol &&
       document.activeElement &&
-      document.activeElement.classList.contains("text-edit-box")
+      symbolInput()
     ) {
       insertAtCursor(document.activeElement, btn.dataset.symbol);
       return;
@@ -557,7 +563,14 @@ function preparePrintSheet() {
 }
 window.addEventListener("beforeprint", preparePrintSheet);
 window.addEventListener("afterprint", () => editor.setPrintMode(false));
-document.getElementById("btnPrintPdf").addEventListener("click", () => window.print());
+const worksheetFonts = Promise.all([
+  document.fonts.load('400 30px Sarabun', 'แบบฝึกหัด ๒.๕ × ๔'),
+  document.fonts.load('700 38px Sarabun', 'แบบฝึกหัด ๒.๕ × ๔'),
+]).catch(() => []);
+document.getElementById("btnPrintPdf").addEventListener("click", async () => {
+  await worksheetFonts;
+  window.print();
+});
 
 // ---- save image / create PDF / append to an existing PDF ----
 const existingPdfInput = document.getElementById("existingPdfInput");
@@ -601,7 +614,7 @@ function wrapCanvasText(ctx, text, maxWidth) {
 }
 
 function createWorksheetCanvas() {
-  const drawing = editor.createExportCanvas();
+  const drawing = editor.createExportCanvas(true);
   const page = document.createElement("canvas");
   page.width = 1240;
   page.height = 1754;
@@ -611,9 +624,9 @@ function createWorksheetCanvas() {
 
   ctx.fillStyle = "#2d3142";
   ctx.textAlign = "center";
-  ctx.font = "bold 38px Kanit, Tahoma, sans-serif";
+  ctx.font = "bold 38px Sarabun, Tahoma, sans-serif";
   ctx.fillText("แบบฝึกหัดโจทย์ปัญหา Bar Model", page.width / 2, 70);
-  ctx.font = "30px Kanit, Tahoma, sans-serif";
+  ctx.font = "30px Sarabun, Tahoma, sans-serif";
   const lines = wrapCanvasText(ctx, `ข้อ ${currentIndex + 1}  ${problemText.value.trim()}`, 1100);
   lines.slice(0, 6).forEach((line, i) => ctx.fillText(line, page.width / 2, 125 + i * 44));
 
@@ -629,6 +642,7 @@ function createWorksheetCanvas() {
 
 async function worksheetPdfBytes(existingBytes = null) {
   const pdf = existingBytes ? await PDFDocument.load(existingBytes) : await PDFDocument.create();
+  await worksheetFonts;
   const worksheet = createWorksheetCanvas();
   const png = await pdf.embedPng(await canvasToBlob(worksheet).then((b) => b.arrayBuffer()));
   const page = pdf.addPage([595.28, 841.89]);

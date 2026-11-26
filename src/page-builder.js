@@ -91,10 +91,16 @@ export function createPageBuilder(root, onActivate) {
     node.append(controls);
     root.append(node);
     blocks.push(block);
-    if (type === "text") {
+    if (type === "text" || type === "equation") {
       const input = document.createElement("textarea");
       input.placeholder = "เพิ่มข้อความ";
       input.setAttribute("aria-label", "ข้อความในใบงาน");
+      if (type === "equation") {
+        node.classList.add("equation-block");
+        input.className = "equation-input";
+        input.placeholder = "เขียนประโยคสัญลักษณ์";
+        input.setAttribute("aria-label", "ประโยคสัญลักษณ์");
+      }
       input.value = value;
       input.rows = 1;
       const printText = document.createElement("div");
@@ -137,6 +143,8 @@ export function createPageBuilder(root, onActivate) {
   }
 
   return {
+    addEquation: () => add("equation", "", true),
+    rotateBrace: () => active.editor.rotateSelectedBrace(),
     addText: () => add("text", "", true),
     addDrawing: () => add("drawing", [], true),
     snapshot: () => ({ blocks: blocks.map(({ type, input, editor, height }) => ({ type, height, value: input ? input.value : editor.getObjects() })) }),
@@ -185,14 +193,14 @@ export function createPageBuilder(root, onActivate) {
     setPrintMode(enabled) {
       for (const block of blocks) block.editor?.setPrintMode(enabled);
     },
-    createExportCanvas() {
+    createExportCanvas(worksheet = false) {
       const output = document.createElement("canvas");
       const ctx = output.getContext("2d");
       const parts = blocks.map((block) => block.editor
-        ? { image: block.editor.createExportCanvas() }
-        : { text: block.input.value });
+        ? { image: block.editor.createExportCanvas(worksheet) }
+        : { text: block.input.value, ruled: block.type === "equation" });
       const width = Math.max(320, ...parts.map((part) => part.image?.width || 0));
-      const font = "28px Kanit, Tahoma, sans-serif";
+      const font = worksheet ? "28px Sarabun, Tahoma, sans-serif" : "28px Kanit, Tahoma, sans-serif";
       ctx.font = font;
       let height = 0;
       for (const part of parts) {
@@ -227,6 +235,11 @@ export function createPageBuilder(root, onActivate) {
           top += part.image.height;
         } else {
           for (const line of part.lines) {
+            if (part.ruled) {
+              ctx.fillStyle = "#c5cfe0";
+              ctx.fillRect(16, top + 36, width - 32, 1);
+              ctx.fillStyle = "#23243c";
+            }
             ctx.fillText(line, 16, top + 32);
             top += 38;
           }

@@ -82,6 +82,7 @@
       <button class="tool-btn symbol-btn" data-tool="symbol" data-symbol="?" title="เครื่องหมายคำถาม (ตัวที่ไม่รู้ค่า)">?<span>ถาม</span></button>
       <button class="tool-btn" data-tool="scissors" title="แตะบาร์เพื่อแบ่งเป็นส่วนเท่าๆ กันด้วยเส้นประ และแตะซ้ำเพื่อเพิ่มส่วน">✂️<span>แบ่งเส้นประ</span></button>
       <button class="tool-btn" data-tool="scissors-solid" title="แตะบาร์เพื่อแบ่งเป็นส่วนเท่าๆ กันด้วยเส้นตรงหนา และแตะซ้ำเพื่อเพิ่มส่วน">✂️┃<span>แบ่งเส้นหนา</span></button>
+      <button class="tool-btn" id="btnRotateBrace" title="เลือกปีกกาแล้วกดเพื่อหมุน 90 องศา">⟳<span>หมุนปีกกา</span></button>
       <button class="tool-btn" id="btnCopy" title="คัดลอก (Ctrl+C)">📋<span>คัดลอก</span></button>
       <button class="tool-btn" id="btnPaste" title="วาง (Ctrl+V)">📄<span>วาง</span></button>
       <button class="tool-btn" id="btnDelete" title="ลบ">🗑️<span>ลบ</span></button>
@@ -100,6 +101,7 @@
 
     <main class="page-builder">
       <div class="add-blocks">
+        <button type="button" id="addEquationBlock">+ ประโยคสัญลักษณ์</button>
         <button type="button" id="addTextBlock">+ ข้อความ</button>
         <button type="button" id="addDrawingBlock">+ วาดบาร์</button>
       </div>

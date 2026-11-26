@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@400;700&display=swap');
 
 :root {
   --pink: #ff6b9d;
@@ -854,4 +854,21 @@ body.compact-header .problem-panel {
 
 @media print {
   .block-resize-handle { display: none; }
+}
+
+.equation-block .equation-input {
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 36px;
+  background: repeating-linear-gradient(to bottom, transparent 0 35px, #c5cfe0 35px 36px);
+}
+@media print {
+  body { font-family: Sarabun, Tahoma, sans-serif; }
+  .equation-block .block-print-text {
+    min-height: 36px;
+    line-height: 36px;
+    background: repeating-linear-gradient(to bottom, transparent 0 35px, #c5cfe0 35px 36px);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
